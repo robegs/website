@@ -75,3 +75,10 @@ This repository will host the personal professional website for **Dr. Roberto Go
 2. Provide a CV or list of key projects, talks, and awards.
 3. Grant access or paste Google Scholar/LinkedIn details to complete publications and experience sections.
 4. Choose a visual style and build the site structure.
+
+## Automated Content Monitoring
+- A GitHub Actions workflow runs on the 1st and 16th of each month (`.github/workflows/content-monitor.yml`).
+- It checks monitored sources in `monitoring/sources.json` and updates:
+  - `monitoring/last_snapshot.json`
+  - `monitoring/latest_report.md`
+- If it detects changes, it opens a GitHub issue to review and update website content.
