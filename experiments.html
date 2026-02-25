@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="Interactive browser game experiments built in JavaScript by Dr. Roberto Gonzalez Sanchez."
+    />
+    <title>Experiments Lab | Dr. Roberto Gonzalez Sanchez</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Space+Grotesk:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="experiments.css" />
+  </head>
+  <body>
+    <div class="page">
+      <header class="site-header">
+        <a class="brand" href="index.html">RGS</a>
+        <nav class="nav">
+          <a href="#concept">Concept</a>
+          <a href="#games">Games</a>
+          <a href="#roadmap">Next Games</a>
+        </nav>
+      </header>
+
+      <main>
+        <section class="hero">
+          <p class="eyebrow">Interactive Research Playground</p>
+          <h1>JavaScript Game Experiments</h1>
+          <p>
+            A browser lab for small, fast, testable game concepts. Each game is modular, so new
+            experiments can be added without changing the whole page.
+          </p>
+          <div class="hero-actions">
+            <a class="btn primary" href="#games">Play Experiments</a>
+            <a class="btn ghost" href="index.html">Back to Main Site</a>
+          </div>
+        </section>
+
+        <section id="concept" class="panel">
+          <h2>Concept</h2>
+          <div class="grid two">
+            <article class="card">
+              <h3>Game Registry</h3>
+              <p>
+                Games are registered with metadata (`id`, `title`, `description`) and one setup
+                function. This allows adding more titles with minimal code changes.
+              </p>
+            </article>
+            <article class="card">
+              <h3>Single Play Surface</h3>
+              <p>
+                The page renders only one game at a time. Switching games disposes active state and
+                mounts the selected experiment cleanly.
+              </p>
+            </article>
+          </div>
+        </section>
+
+        <section id="games">
+          <div class="section-title">
+            <h2>Playable Games</h2>
+            <p>First experiments ready to play directly in your browser.</p>
+          </div>
+          <div class="game-layout">
+            <aside class="game-list" id="game-list"></aside>
+            <section class="play-surface">
+              <div id="game-meta"></div>
+              <div id="game-mount"></div>
+            </section>
+          </div>
+        </section>
+
+        <section id="roadmap" class="panel">
+          <h2>Next Games To Add</h2>
+          <div class="grid three">
+            <article class="card">
+              <h3>Packet Defender</h3>
+              <p>Tower-defense style game about filtering benign and malicious network packets.</p>
+            </article>
+            <article class="card">
+              <h3>Privacy Maze</h3>
+              <p>Stealth puzzle where each move leaks metadata, forcing strategic minimization.</p>
+            </article>
+            <article class="card">
+              <h3>CTI Match</h3>
+              <p>Pattern matching game for threat intelligence indicators and confidence scoring.</p>
+            </article>
+          </div>
+        </section>
+      </main>
+
+      <footer class="site-footer">
+        <p>Experiments lab for rapid browser prototypes in JavaScript.</p>
+      </footer>
+    </div>
+
+    <script src="experiments.js"></script>
+  </body>
+</html>
