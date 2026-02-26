@@ -21,9 +21,7 @@
       <header class="site-header">
         <a class="brand" href="index.html">RGS</a>
         <nav class="nav">
-          <a href="#concept">Concept</a>
           <a href="#games">Games</a>
-          <a href="#roadmap">Next Games</a>
         </nav>
       </header>
 
@@ -41,26 +39,6 @@
           </div>
         </section>
 
-        <section id="concept" class="panel">
-          <h2>Concept</h2>
-          <div class="grid two">
-            <article class="card">
-              <h3>Game Registry</h3>
-              <p>
-                Games are registered with metadata (`id`, `title`, `description`) and one setup
-                function. This allows adding more titles with minimal code changes.
-              </p>
-            </article>
-            <article class="card">
-              <h3>Single Play Surface</h3>
-              <p>
-                The page renders only one game at a time. Switching games disposes active state and
-                mounts the selected experiment cleanly.
-              </p>
-            </article>
-          </div>
-        </section>
-
         <section id="games">
           <div class="section-title">
             <h2>Playable Games</h2>
@@ -74,24 +52,6 @@
             </section>
           </div>
         </section>
-
-        <section id="roadmap" class="panel">
-          <h2>Next Games To Add</h2>
-          <div class="grid three">
-            <article class="card">
-              <h3>Packet Defender</h3>
-              <p>Tower-defense style game about filtering benign and malicious network packets.</p>
-            </article>
-            <article class="card">
-              <h3>Privacy Maze</h3>
-              <p>Stealth puzzle where each move leaks metadata, forcing strategic minimization.</p>
-            </article>
-            <article class="card">
-              <h3>CTI Match</h3>
-              <p>Pattern matching game for threat intelligence indicators and confidence scoring.</p>
-            </article>
-          </div>
-        </section>
       </main>
 
       <footer class="site-footer">
@@ -99,6 +59,13 @@
       </footer>
     </div>
 
+    <script>
+      window.ExperimentsGames = [];
+    </script>
+    <script src="games/brick-breaker.js"></script>
+    <script src="games/packet-defender.js"></script>
+    <script src="games/target-rush.js"></script>
+    <script src="games/cipher-memory.js"></script>
     <script src="experiments.js"></script>
   </body>
 </html>
