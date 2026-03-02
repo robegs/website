@@ -71,7 +71,7 @@ function setupBrickBreaker(container) {
   const powerDefs = {
     expand: { name: "wide paddle", tier: "common", color: "#34d399", duration: 8 },
     slow: { name: "slow ball", tier: "common", color: "#22d3ee", duration: 7 },
-    paddle_boost: { name: "fast paddle", tier: "common", color: "#60a5fa", duration: 8 },
+    catch: { name: "sticky paddle", tier: "common", color: "#60a5fa", duration: 8 },
     multiball: { name: "multiball", tier: "uncommon", color: "#facc15", duration: 5.5 },
     laser: { name: "laser shots", tier: "uncommon", color: "#c084fc", duration: 8.5 },
     life: { name: "+1 life", tier: "rare", color: "#f43f5e", duration: 0 },
@@ -95,7 +95,6 @@ function setupBrickBreaker(container) {
   let lastTs = 0;
   let activePower = { name: "-", timer: 0, type: "none", tier: "none" };
   let speedScale = 1;
-  let paddleSpeedScale = 1;
   let laserShots = [];
   let laserCooldown = 0;
   let screenShake = { timer: 0, strength: 0 };
@@ -298,7 +297,6 @@ function setupBrickBreaker(container) {
   function clearTransientEffects() {
     activePower = { name: "-", timer: 0, type: "none", tier: "none" };
     speedScale = 1;
-    paddleSpeedScale = 1;
     paddle.w = paddleBaseWidth;
     laserShots = [];
     laserCooldown = 0;
@@ -312,7 +310,6 @@ function setupBrickBreaker(container) {
 
   function resetTimedModifiers() {
     speedScale = 1;
-    paddleSpeedScale = 1;
     paddle.w = paddleBaseWidth;
     laserShots = [];
     laserCooldown = 0;
@@ -415,10 +412,10 @@ function setupBrickBreaker(container) {
 
   function updateInput(dt) {
     if (keys.has("ArrowLeft") || keys.has("a") || keys.has("A")) {
-      paddle.x -= paddle.speed * paddleSpeedScale * dt;
+      paddle.x -= paddle.speed * dt;
     }
     if (keys.has("ArrowRight") || keys.has("d") || keys.has("D")) {
-      paddle.x += paddle.speed * paddleSpeedScale * dt;
+      paddle.x += paddle.speed * dt;
     }
     paddle.x = Math.max(0, Math.min(width - paddle.w, paddle.x));
     const paddleCenterNorm = (paddle.x + paddle.w / 2) / width - 0.5;
@@ -530,11 +527,10 @@ function setupBrickBreaker(container) {
       playTone(520, 0.1, 0.06);
       return;
     }
-    if (type === "paddle_boost") {
+    if (type === "catch") {
       resetTimedModifiers();
-      paddleSpeedScale = 1.35;
       activePower = { name: def.name, timer: def.duration, type, tier: def.tier };
-      playTone(570, 0.1, 0.06);
+      playTone(570, 0.11, 0.06);
       return;
     }
     if (type === "multiball") {
@@ -969,6 +965,12 @@ function setupBrickBreaker(container) {
       ball.vy = -Math.abs(ball.vy);
       makeParticles(ball.x, paddle.y, "rgba(125, 211, 252, 0.85)", 9);
       playTone(300, 0.045, 0.03);
+      if (activePower.type === "catch") {
+        ball.stuck = true;
+        ball.y = paddle.y - ball.r - 1;
+        ball.trail = [];
+        statusEl.textContent = "Sticky paddle active. Click board (or press Space) to relaunch.";
+      }
     }
 
     if (collideBallWithMiniBoss(ball)) {
@@ -1401,15 +1403,17 @@ function setupBrickBreaker(container) {
       ctx.restore();
       return;
     }
-    if (type === "paddle_boost") {
+    if (type === "catch") {
       ctx.beginPath();
-      ctx.moveTo(x - s * 1.0, y - s * 0.7);
-      ctx.lineTo(x - s * 0.15, y);
-      ctx.lineTo(x - s * 1.0, y + s * 0.7);
-      ctx.moveTo(x + s * 0.05, y - s * 0.7);
-      ctx.lineTo(x + s * 0.9, y);
-      ctx.lineTo(x + s * 0.05, y + s * 0.7);
+      ctx.moveTo(x - s * 0.9, y - s * 0.9);
+      ctx.lineTo(x - s * 0.9, y + s * 0.55);
+      ctx.arc(x, y + s * 0.55, s * 0.9, Math.PI, 0, false);
+      ctx.lineTo(x + s * 0.9, y - s * 0.9);
       ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(x - s * 0.9, y - s * 0.95, s * 0.25, 0, Math.PI * 2);
+      ctx.arc(x + s * 0.9, y - s * 0.95, s * 0.25, 0, Math.PI * 2);
+      ctx.fill();
       ctx.restore();
       return;
     }
