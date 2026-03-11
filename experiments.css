@@ -318,6 +318,82 @@ a {
   background: #ecfeff;
 }
 
+.lab-finish-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+  background: rgba(15, 23, 42, 0.82);
+  text-align: center;
+}
+
+.lab-finish-overlay.show {
+  display: flex;
+}
+
+.lab-finish-card {
+  max-width: 320px;
+  padding: 16px 18px;
+  border-radius: 14px;
+  border: 1px solid rgba(226, 232, 240, 0.7);
+  background: rgba(2, 6, 23, 0.86);
+  color: #f8fafc;
+}
+
+.lab-finish-title {
+  margin: 0 0 8px;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+}
+
+.lab-finish-text {
+  margin: 0 0 12px;
+  color: #cbd5e1;
+  font-size: 0.92rem;
+}
+
+.cm-grid-wrap {
+  position: relative;
+  display: inline-block;
+}
+
+.nr-game .status {
+  color: #c4b5fd;
+}
+
+.nr-game .nr-legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  color: #cbd5e1;
+  margin-top: 0;
+  margin-bottom: 10px;
+}
+
+.nr-game .nr-legend img {
+  width: 16px;
+  height: 16px;
+  filter: invert(88%) sepia(14%) saturate(341%) hue-rotate(183deg) brightness(97%) contrast(95%);
+}
+
+.nr-game .hud-item {
+  border-color: rgba(125, 211, 252, 0.42);
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.9), rgba(30, 41, 59, 0.9));
+  color: #e2e8f0;
+}
+
+.nr-game .hud-item strong {
+  color: #a5f3fc;
+}
+
+.nr-game .hud-item div {
+  color: #f5f3ff;
+}
+
 .site-footer {
   margin-top: 40px;
   border-top: 1px solid var(--edge);
@@ -447,5 +523,318 @@ a {
 @media (max-width: 860px) {
   .game-layout {
     grid-template-columns: 1fr;
+  }
+}
+
+.pf-game .hud {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(96px, 1fr));
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.pf-game .hud-item {
+  border: 1px solid rgba(251, 191, 143, 0.58);
+  border-radius: 12px;
+  padding: 9px 10px;
+  background:
+    linear-gradient(180deg, rgba(255, 247, 237, 0.96), rgba(255, 237, 213, 0.92)),
+    radial-gradient(circle at 20% 0%, rgba(251, 146, 60, 0.2), transparent 35%);
+  box-shadow:
+    0 10px 18px rgba(88, 28, 21, 0.09),
+    inset 0 1px 0 rgba(255, 255, 255, 0.84);
+  position: relative;
+  overflow: hidden;
+}
+
+.pf-game .hud-item::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(110deg, transparent 20%, rgba(255, 255, 255, 0.35) 48%, transparent 78%);
+  transform: translateX(-120%);
+  animation: pfHudShine 6s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.pf-game .hud-item strong {
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #7c2d12;
+}
+
+.pf-game .hud-item div {
+  font-weight: 700;
+  color: #431407;
+  margin-top: 3px;
+}
+
+.pf-game .action-row {
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.pf-game .action-row .btn.ghost {
+  border-color: rgba(251, 191, 143, 0.72);
+  background: linear-gradient(180deg, rgba(255, 247, 237, 0.96), rgba(255, 237, 213, 0.94));
+  color: #431407;
+  box-shadow: 0 6px 14px rgba(124, 45, 18, 0.12);
+}
+
+.pf-game .action-row .btn.ghost:hover {
+  border-color: rgba(251, 146, 60, 0.72);
+  box-shadow: 0 10px 20px rgba(124, 45, 18, 0.18);
+}
+
+.pf-game .status {
+  color: #7c2d12;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+.pf-theme-banner {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid rgba(251, 191, 143, 0.7);
+  border-radius: 999px;
+  padding: 4px 12px;
+  margin-bottom: 10px;
+  background: linear-gradient(135deg, rgba(255, 237, 213, 0.95), rgba(254, 215, 170, 0.94));
+  color: #7c2d12;
+  font-size: 0.76rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: 700;
+}
+
+.pf-canvas-wrap {
+  width: 100%;
+  max-width: 100%;
+  border: 1px solid rgba(190, 107, 96, 0.5);
+  border-radius: 16px;
+  overflow: hidden;
+  position: relative;
+  background:
+    radial-gradient(circle at 80% -10%, rgba(255, 189, 125, 0.26), transparent 42%),
+    radial-gradient(circle at 16% 118%, rgba(190, 98, 126, 0.23), transparent 46%),
+    linear-gradient(180deg, #ffe5c7, #f8c9af 72%, #f0b2a6);
+  box-shadow:
+    0 30px 50px rgba(127, 29, 29, 0.25),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+}
+
+.pf-canvas {
+  width: 100%;
+  height: auto;
+  display: block;
+  cursor: pointer;
+  image-rendering: pixelated;
+  filter: saturate(1.06) contrast(1.04);
+}
+
+.pf-overlay {
+  position: absolute;
+  left: 50%;
+  top: 28%;
+  transform: translate(-50%, -50%);
+  z-index: 2;
+  display: none;
+  padding: 12px 22px;
+  border-radius: 999px;
+  border: 1px solid rgba(226, 232, 240, 0.85);
+  background: rgba(15, 23, 42, 0.88);
+  color: #f8fafc;
+  font: 700 1rem "Space Grotesk", "Segoe UI", sans-serif;
+  letter-spacing: 0.03em;
+}
+
+.pf-overlay.show {
+  display: inline-flex;
+}
+
+.pf-settings {
+  display: grid;
+  grid-template-columns: auto minmax(160px, 320px);
+  gap: 8px 12px;
+  align-items: center;
+  margin: 10px 0 14px;
+  max-width: 560px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(251, 191, 143, 0.56);
+  background: linear-gradient(180deg, rgba(255, 247, 237, 0.96), rgba(255, 237, 213, 0.93));
+}
+
+.pf-settings label {
+  color: #7c2d12;
+  font-size: 0.88rem;
+}
+
+.pf-settings input[type="range"] {
+  width: 100%;
+  accent-color: #ea580c;
+}
+
+.pf-editor-panel {
+  margin: 10px 0 14px;
+  border: 1px solid rgba(251, 191, 143, 0.58);
+  border-radius: 12px;
+  padding: 10px;
+  background: linear-gradient(180deg, rgba(255, 247, 237, 0.97), rgba(255, 237, 213, 0.94));
+}
+
+.pf-editor-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.pf-editor-row input[type="range"] {
+  flex: 1 1 220px;
+  min-width: 180px;
+  accent-color: #ea580c;
+}
+
+.pf-editor-row label,
+.pf-editor-row strong {
+  color: #7c2d12;
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.pf-editor-level-label {
+  color: #7c2d12;
+  font-size: 0.82rem;
+  font-weight: 700;
+  margin-left: 2px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(255, 237, 213, 0.9);
+  border: 1px solid rgba(251, 191, 143, 0.62);
+}
+
+.pf-editor-palette {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(88px, 1fr));
+  gap: 6px;
+  width: 100%;
+}
+
+.pf-editor-tile {
+  border: 1px solid rgba(180, 83, 9, 0.3);
+  border-radius: 10px;
+  background: #fff7ed;
+  color: #7c2d12;
+  padding: 7px 8px;
+  display: grid;
+  gap: 2px;
+  justify-items: start;
+  text-align: left;
+  cursor: pointer;
+  transition: transform 0.14s ease, box-shadow 0.14s ease, border-color 0.14s ease;
+}
+
+.pf-editor-tile .glyph {
+  font: 700 0.95rem "Space Grotesk", "Consolas", monospace;
+}
+
+.pf-editor-tile .label {
+  font-size: 0.7rem;
+  line-height: 1.1;
+}
+
+.pf-editor-tile:hover {
+  transform: translateY(-1px);
+  border-color: rgba(234, 88, 12, 0.62);
+  box-shadow: 0 8px 14px rgba(124, 45, 18, 0.14);
+}
+
+.pf-editor-tile.active {
+  border-color: rgba(234, 88, 12, 0.78);
+  background: linear-gradient(180deg, #fff7ed, #fed7aa);
+  box-shadow: 0 10px 18px rgba(124, 45, 18, 0.18);
+}
+
+.pf-editor-help {
+  margin: 8px 0;
+  color: #92400e;
+  font-size: 0.82rem;
+}
+
+.pf-editor-advanced summary {
+  cursor: pointer;
+  color: #9a3412;
+  font-size: 0.78rem;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.pf-editor-json {
+  width: 100%;
+  min-height: 180px;
+  border: 1px solid rgba(180, 83, 9, 0.3);
+  border-radius: 10px;
+  padding: 10px;
+  resize: vertical;
+  font: 500 0.78rem/1.4 "Space Grotesk", "Consolas", monospace;
+  color: #431407;
+  background: rgba(255, 255, 255, 0.86);
+}
+
+.pf-touch {
+  margin-top: 12px;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.pf-touch-btn {
+  border: 1px solid rgba(180, 83, 9, 0.42);
+  border-radius: 999px;
+  padding: 10px 16px;
+  font: 700 0.9rem "Space Grotesk", "Segoe UI", sans-serif;
+  background: linear-gradient(180deg, #fff7ed, #ffedd5);
+  color: #7c2d12;
+  min-width: 76px;
+  box-shadow: 0 8px 16px rgba(127, 29, 29, 0.14);
+}
+
+.pf-touch-btn:active {
+  transform: translateY(1px);
+  box-shadow: 0 4px 8px rgba(127, 29, 29, 0.17);
+}
+
+@media (min-width: 901px) {
+  .pf-touch {
+    display: none;
+  }
+}
+
+@media (max-width: 580px) {
+  .pf-settings {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+
+  .pf-editor-row {
+    align-items: stretch;
+  }
+
+  .pf-editor-palette {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@keyframes pfHudShine {
+  0%,
+  70%,
+  100% {
+    transform: translateX(-120%);
+  }
+  82% {
+    transform: translateX(120%);
   }
 }
