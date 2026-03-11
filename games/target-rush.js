@@ -19,7 +19,15 @@ function setupTargetRush(container) {
       <button type="button" id="tr-start" class="btn primary">Start Round</button>
       <button type="button" id="tr-reset" class="btn ghost">Reset Best</button>
     </div>
-    <div class="board" id="tr-board"></div>
+    <div class="board" id="tr-board">
+      <div class="lab-finish-overlay" id="tr-finish" aria-live="polite">
+        <div class="lab-finish-card">
+          <p class="lab-finish-title">Congratulations!</p>
+          <p class="lab-finish-text" id="tr-finish-text">Round complete.</p>
+          <button type="button" id="tr-play-again" class="btn primary">Play Again</button>
+        </div>
+      </div>
+    </div>
     <p class="status" id="tr-status">Press Start Round to begin.</p>
   `;
   container.appendChild(root);
@@ -30,6 +38,9 @@ function setupTargetRush(container) {
   const startBtn = root.querySelector("#tr-start");
   const resetBtn = root.querySelector("#tr-reset");
   const board = root.querySelector("#tr-board");
+  const finishEl = root.querySelector("#tr-finish");
+  const finishTextEl = root.querySelector("#tr-finish-text");
+  const playAgainBtn = root.querySelector("#tr-play-again");
   const status = root.querySelector("#tr-status");
 
   let timerId = null;
@@ -42,10 +53,20 @@ function setupTargetRush(container) {
   bestEl.textContent = String(best);
 
   function clearBoard() {
-    board.innerHTML = "";
+    const targets = board.querySelectorAll(".target");
+    targets.forEach((target) => target.remove());
   }
 
-  function stopRound(message) {
+  function hideFinishScreen() {
+    finishEl.classList.remove("show");
+  }
+
+  function showFinishScreen(message) {
+    finishTextEl.textContent = message;
+    finishEl.classList.add("show");
+  }
+
+  function stopRound(message, completed) {
     running = false;
     if (timerId) {
       window.clearInterval(timerId);
@@ -58,6 +79,9 @@ function setupTargetRush(container) {
     clearBoard();
     startBtn.disabled = false;
     status.textContent = message;
+    if (completed) {
+      showFinishScreen(message);
+    }
     if (score > best) {
       best = score;
       window.localStorage.setItem("targetRushBest", String(best));
@@ -100,6 +124,7 @@ function setupTargetRush(container) {
     startBtn.disabled = true;
     seconds = 30;
     score = 0;
+    hideFinishScreen();
     timeEl.textContent = String(seconds);
     scoreEl.textContent = String(score);
     status.textContent = "Round started.";
@@ -108,9 +133,15 @@ function setupTargetRush(container) {
       seconds -= 1;
       timeEl.textContent = String(seconds);
       if (seconds <= 0) {
-        stopRound(`Round finished. Final score: ${score}.`);
+        stopRound(`Round finished. Final score: ${score}.`, true);
       }
     }, 1000);
+  });
+
+  playAgainBtn.addEventListener("click", function () {
+    if (!running) {
+      startBtn.click();
+    }
   });
 
   resetBtn.addEventListener("click", function () {

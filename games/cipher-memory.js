@@ -8,18 +8,29 @@ const cipherMemoryGame = {
 
 function setupCipherMemory(container) {
   const symbols = ["A", "B", "C", "D"];
+  const goalLevel = 10;
   const root = document.createElement("div");
   root.className = "lab-game";
   root.innerHTML = `
     <div class="hud">
       <div class="hud-item"><strong>Level</strong><div id="cm-level">1</div></div>
+      <div class="hud-item"><strong>Goal</strong><div id="cm-goal">${goalLevel}</div></div>
       <div class="hud-item"><strong>Best</strong><div id="cm-best">1</div></div>
     </div>
     <div class="action-row">
       <button type="button" id="cm-start" class="btn primary">Start Sequence</button>
     </div>
     <p class="status" id="cm-status">Watch the sequence, then repeat it.</p>
-    <div class="choice-grid" id="cm-grid"></div>
+    <div class="cm-grid-wrap">
+      <div class="choice-grid" id="cm-grid"></div>
+      <div class="lab-finish-overlay" id="cm-finish" aria-live="polite">
+        <div class="lab-finish-card">
+          <p class="lab-finish-title">Congratulations!</p>
+          <p class="lab-finish-text" id="cm-finish-text">Cipher sequence mastered.</p>
+          <button type="button" id="cm-play-again" class="btn primary">Play Again</button>
+        </div>
+      </div>
+    </div>
   `;
   container.appendChild(root);
 
@@ -28,6 +39,9 @@ function setupCipherMemory(container) {
   const startBtn = root.querySelector("#cm-start");
   const status = root.querySelector("#cm-status");
   const grid = root.querySelector("#cm-grid");
+  const finishEl = root.querySelector("#cm-finish");
+  const finishTextEl = root.querySelector("#cm-finish-text");
+  const playAgainBtn = root.querySelector("#cm-play-again");
 
   let sequence = [];
   let userIndex = 0;
@@ -36,6 +50,15 @@ function setupCipherMemory(container) {
   let playbackTimers = [];
   let best = Number(window.localStorage.getItem("cipherMemoryBest") || "1");
   bestEl.textContent = String(best);
+
+  function hideFinishScreen() {
+    finishEl.classList.remove("show");
+  }
+
+  function showFinishScreen(message) {
+    finishTextEl.textContent = message;
+    finishEl.classList.add("show");
+  }
 
   function clearTimers() {
     playbackTimers.forEach((id) => window.clearTimeout(id));
@@ -90,9 +113,26 @@ function setupCipherMemory(container) {
     startBtn.disabled = false;
   }
 
+  function finishRun() {
+    locked = true;
+    clearTimers();
+    if (goalLevel > best) {
+      best = goalLevel;
+      window.localStorage.setItem("cipherMemoryBest", String(best));
+      bestEl.textContent = String(best);
+    }
+    status.textContent = `Challenge complete at level ${goalLevel}.`;
+    startBtn.disabled = false;
+    showFinishScreen(`You completed level ${goalLevel}.`);
+  }
+
   function succeedStep() {
     userIndex += 1;
     if (userIndex < sequence.length) {
+      return;
+    }
+    if (level >= goalLevel) {
+      finishRun();
       return;
     }
     level += 1;
@@ -129,6 +169,7 @@ function setupCipherMemory(container) {
   });
 
   startBtn.addEventListener("click", function () {
+    hideFinishScreen();
     clearTimers();
     level = 1;
     levelEl.textContent = "1";
@@ -137,6 +178,12 @@ function setupCipherMemory(container) {
     appendRandomSymbol();
     startBtn.disabled = true;
     playbackSequence();
+  });
+
+  playAgainBtn.addEventListener("click", function () {
+    if (!startBtn.disabled) {
+      startBtn.click();
+    }
   });
 
   return function cleanup() {

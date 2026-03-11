@@ -249,7 +249,7 @@ function setupPacketDefender(container) {
       <button type="button" id="pd-overclock" class="btn ghost">Overclock</button>
     </div>
     <div class="choice-grid" id="pd-tower-picker"></div>
-    <p class="status" id="pd-status">Select a tower, then tap on the field to place it. Do not place over the road or another tower.</p>
+    <p class="status" id="pd-status">Select a tower and place it on the field. Do not place over the road or another tower.</p>
     <p class="status" id="pd-combat">Damage dealt: 0 | Best tower: -</p>
     <div class="bb-canvas-wrap">
       <canvas class="bb-canvas" id="pd-canvas" width="${width}" height="${height}"></canvas>
@@ -294,6 +294,11 @@ function setupPacketDefender(container) {
   let wave = 0;
   let kills = 0;
   let selectedTower = "arrow";
+  const hasMousePointer =
+    typeof window !== "undefined" &&
+    typeof window.matchMedia === "function" &&
+    (window.matchMedia("(pointer: fine)").matches || window.matchMedia("(any-pointer: fine)").matches);
+  const useDragPlacement = !!hasMousePointer;
   let paused = false;
   let running = true;
   let rafId = null;
@@ -379,6 +384,13 @@ function setupPacketDefender(container) {
 
   function setStatus(text) {
     statusEl.textContent = text;
+  }
+
+  function getPlacementHint() {
+    if (useDragPlacement) {
+      return "Select a tower, then drag from the tower button to the field to place it. Do not place over the road or another tower.";
+    }
+    return "Tap a tower button, then tap the field to place it. Tap the selected tower button again to unselect and upgrade existing towers.";
   }
 
   function hashSeed(text) {
@@ -1901,24 +1913,28 @@ function setupPacketDefender(container) {
         ctx.fillRect(0, 0, width, height);
         ctx.fillStyle = "#f8fafc";
         ctx.font = "bold 44px Space Grotesk, sans-serif";
-        ctx.fillText("PAUSED", width / 2 - 86, height / 2);
+        ctx.textAlign = "center";
+        ctx.fillText("PAUSED", width / 2, height / 2);
+        ctx.textAlign = "start";
       }
       return;
     }
 
     ctx.fillStyle = "rgba(2, 6, 23, 0.46)";
     ctx.fillRect(0, 0, width, height);
+    ctx.textAlign = "center";
     ctx.fillStyle = lives > 0 ? "#86efac" : "#fca5a5";
     ctx.font = "bold 40px Space Grotesk, sans-serif";
-    ctx.fillText(lives > 0 ? "VICTORY" : "DEFEAT", width / 2 - 92, height / 2 - 4);
+    ctx.fillText(lives > 0 ? "CONGRATULATIONS!" : "DEFEAT", width / 2, height / 2 - 4);
     ctx.fillStyle = "#e2e8f0";
     ctx.font = "600 18px Space Grotesk, sans-serif";
-    ctx.fillText("Press Reset Run to play again.", width / 2 - 128, height / 2 + 28);
+    ctx.fillText("Press Reset Run to play again.", width / 2, height / 2 + 28);
     if (endRunSummary) {
       ctx.font = "600 14px Space Grotesk, sans-serif";
-      ctx.fillText(`Wave ${endRunSummary.wave} | Kills ${endRunSummary.kills} | Gold ${endRunSummary.gold}`, width / 2 - 176, height / 2 + 52);
-      ctx.fillText(`Damage ${endRunSummary.totalDamage} | Best ${endRunSummary.bestTower}`, width / 2 - 176, height / 2 + 72);
+      ctx.fillText(`Wave ${endRunSummary.wave} | Kills ${endRunSummary.kills} | Gold ${endRunSummary.gold}`, width / 2, height / 2 + 52);
+      ctx.fillText(`Damage ${endRunSummary.totalDamage} | Best ${endRunSummary.bestTower}`, width / 2, height / 2 + 72);
     }
+    ctx.textAlign = "start";
   }
 
   function render() {
@@ -2080,7 +2096,7 @@ function setupPacketDefender(container) {
     firstSeenEnemyKinds = new Set();
     endRunSummary = null;
     clearedWaveBonus.clear();
-    setStatus("Select a tower, then tap on the field to place it. Do not place over the road or another tower.");
+    setStatus(getPlacementHint());
     syncHud();
     renderTowerButtons();
   }
@@ -2110,10 +2126,18 @@ function setupPacketDefender(container) {
           : def.slowMult < 1
           ? `Slows enemies to ${Math.round(def.slowMult * 100)}% for ${def.slowDuration.toFixed(1)}s`
           : "Single target";
-      const tooltip = `${def.name}: range ${Math.round(def.range)}, damage ${def.damage}, ${special}. Tap on field to place. Unlocks upgrades at 4 and 11 kills; click placed tower to buy. First upgrade uses selected path.`;
+      const placementText = useDragPlacement
+        ? "Drag from this button to the field to place."
+        : "Tap this button, then tap the field to place.";
+      const tooltip = `${def.name}: range ${Math.round(def.range)}, damage ${def.damage}, ${special}. ${placementText} Unlocks upgrades at 4 and 11 kills; click/tap placed tower to buy. First upgrade uses selected path.`;
       btn.title = tooltip;
       btn.addEventListener("click", function () {
-        selectedTower = key;
+        if (!useDragPlacement && selectedTower === key) {
+          selectedTower = null;
+          setStatus("Tower selection cleared. Tap a placed tower to inspect/upgrade.");
+        } else {
+          selectedTower = key;
+        }
         renderTowerButtons();
       });
       btn.addEventListener("mouseenter", function () {
@@ -2121,11 +2145,25 @@ function setupPacketDefender(container) {
       });
       btn.addEventListener("mouseleave", function () {
         if (!dragState.active) {
-          setStatus("Select a tower, then tap on the field to place it. Do not place over the road or another tower.");
+          setStatus(getPlacementHint());
         }
       });
       btn.addEventListener("pointerdown", function (e) {
         e.preventDefault();
+        if (useDragPlacement) {
+          selectedTower = key;
+          renderTowerButtons();
+          beginDrag(key, e.clientX, e.clientY);
+          setStatus(`${def.name} selected. Drag to the field and release to place.`);
+          return;
+        }
+        if (selectedTower === key) {
+          selectedTower = null;
+          renderTowerButtons();
+          cancelDrag();
+          setStatus("Tower selection cleared. Tap a placed tower to inspect/upgrade.");
+          return;
+        }
         selectedTower = key;
         renderTowerButtons();
         cancelDrag();
@@ -2243,12 +2281,19 @@ function setupPacketDefender(container) {
       }
       return;
     }
-    if (placeTowerAtPosition(selectedTower, p.x, p.y)) {
+    if (useDragPlacement) {
+      const tower = findTowerAtPoint(p.x, p.y);
+      if (tower) {
+        tryUpgradeTower(tower);
+      }
       return;
     }
-    const tower = findTowerAtPoint(p.x, p.y);
-    if (tower) {
-      tryUpgradeTower(tower);
+    if (selectedTower && placeTowerAtPosition(selectedTower, p.x, p.y)) {
+      return;
+    }
+    const tappedTower = findTowerAtPoint(p.x, p.y);
+    if (tappedTower) {
+      tryUpgradeTower(tappedTower);
     }
   }
 

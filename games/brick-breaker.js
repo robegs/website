@@ -43,6 +43,13 @@ function setupBrickBreaker(container) {
     <div class="bb-canvas-wrap">
       <canvas class="bb-canvas" id="bb-canvas" width="${width}" height="${height}"></canvas>
       <button type="button" id="bb-resume-overlay" class="bb-resume-overlay" aria-label="Resume game">Resume</button>
+      <div class="lab-finish-overlay" id="bb-finish-overlay" aria-live="polite">
+        <div class="lab-finish-card">
+          <p class="lab-finish-title">Congratulations!</p>
+          <p class="lab-finish-text" id="bb-finish-text">Campaign complete.</p>
+          <button type="button" id="bb-play-again" class="btn primary">Play Again</button>
+        </div>
+      </div>
     </div>
   `;
   container.appendChild(root);
@@ -61,6 +68,9 @@ function setupBrickBreaker(container) {
   const pauseBtn = root.querySelector("#bb-pause");
   const resetBtn = root.querySelector("#bb-reset");
   const resumeOverlayBtn = root.querySelector("#bb-resume-overlay");
+  const finishOverlayEl = root.querySelector("#bb-finish-overlay");
+  const finishTextEl = root.querySelector("#bb-finish-text");
+  const playAgainBtn = root.querySelector("#bb-play-again");
   const levelPickerEl = root.querySelector("#bb-level-picker");
 
   const keys = new Set();
@@ -316,6 +326,9 @@ function setupBrickBreaker(container) {
   }
 
   function restartRun() {
+    if (finishOverlayEl) {
+      finishOverlayEl.classList.remove("show");
+    }
     lives = 3;
     score = 0;
     level = selectedStartLevel;
@@ -363,6 +376,14 @@ function setupBrickBreaker(container) {
       window.localStorage.setItem("brickBreakerBest", String(best));
     }
     syncHud();
+  }
+
+  function showFinishScreen(text) {
+    if (!finishOverlayEl || !finishTextEl) {
+      return;
+    }
+    finishTextEl.textContent = text;
+    finishOverlayEl.classList.add("show");
   }
 
   function makeParticles(x, y, color, amount) {
@@ -1041,6 +1062,7 @@ function setupBrickBreaker(container) {
       playTone(780, 0.2, 0.08);
       playTone(980, 0.22, 0.07);
       endRun("Campaign complete. You finished all levels. Click board to replay.");
+      showFinishScreen(`Campaign complete. Final score: ${score}.`);
       return;
     }
 
@@ -1593,6 +1615,11 @@ function setupBrickBreaker(container) {
       if (paused) {
         togglePause();
       }
+    });
+  }
+  if (playAgainBtn) {
+    playAgainBtn.addEventListener("click", function () {
+      restartRun();
     });
   }
 
