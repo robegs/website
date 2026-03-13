@@ -31,4 +31,18 @@ Kenney assets downloaded and extracted:
   - Local folder: `assets/games/neon-rift-rally/kenney/racing-pack`
   - Used files:
     - `PNG/Cars/car_blue_1.png`
+    - `PNG/Objects/arrow_yellow.png`
+    - `PNG/Objects/barrel_red.png`
+    - `PNG/Objects/barrier_red_race.png`
+    - `PNG/Objects/barrier_white_race.png`
+    - `PNG/Objects/cone_straight.png`
+    - `PNG/Objects/light_yellow.png`
+    - `PNG/Objects/rock1.png`
+    - `PNG/Objects/rock2.png`
+    - `PNG/Objects/rock3.png`
+    - `PNG/Objects/tent_blue_large.png`
+    - `PNG/Objects/tires_white_alt.png`
+    - `PNG/Objects/tree_large.png`
+    - `PNG/Objects/tree_small.png`
+    - `PNG/Objects/tribune_overhang_striped.png`
 - Kenney license: CC0

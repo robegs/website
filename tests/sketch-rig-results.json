@@ -1,0 +1,999 @@
+{
+  "fixtureExpectations": {
+    "at": "2026-03-13T00:11:40.759Z",
+    "passed": 6,
+    "total": 6,
+    "ok": true,
+    "audits": [
+      {
+        "fixture": "wheel-cart",
+        "level": 1,
+        "expectation": {
+          "summary": "Both wheels stay planted on flat ground and roll the cart forward without hopping.",
+          "minProgress": 1,
+          "maxAbsAngleDeg": 26,
+          "minGroundedWheelRatio": 1.75,
+          "minFramesWithTwoWheels": 0.72,
+          "minAvgSpeed": 36,
+          "maxSingleSupportPeak": 0.22
+        },
+        "metrics": {
+          "cleared": true,
+          "progress": 1.0004986768609825,
+          "avgGroundedWheels": 2,
+          "avgGroundedLegs": 0,
+          "avgGroundedSupports": 2,
+          "framesWithTwoWheelsRatio": 1,
+          "framesWithTwoLegsRatio": 0,
+          "avgSpeed": 37.269016529760115,
+          "maxAbsAngleDeg": 5.5039818809955285,
+          "singleSupportPeak": 0,
+          "steps": 1449
+        },
+        "ok": true,
+        "failures": []
+      },
+      {
+        "fixture": "walker",
+        "level": 1,
+        "expectation": {
+          "summary": "Two legs alternate support, with frequent double-support moments and steady walking progress.",
+          "minProgress": 1,
+          "maxAbsAngleDeg": 32,
+          "minGroundedLegRatio": 1.1,
+          "minFramesWithTwoLegs": 0.22,
+          "minAvgSpeed": 26,
+          "maxSingleSupportPeak": 0.5
+        },
+        "metrics": {
+          "cleared": true,
+          "progress": 1.0004898988069493,
+          "avgGroundedWheels": 0,
+          "avgGroundedLegs": 1.9989350372736954,
+          "avgGroundedSupports": 1.9989350372736954,
+          "framesWithTwoWheelsRatio": 0,
+          "framesWithTwoLegsRatio": 0.9989350372736954,
+          "avgSpeed": 28.735518109188614,
+          "maxAbsAngleDeg": 16.419029711174662,
+          "singleSupportPeak": 0,
+          "steps": 1878
+        },
+        "ok": true,
+        "failures": []
+      },
+      {
+        "fixture": "trike",
+        "level": 1,
+        "expectation": {
+          "summary": "At least two wheels stay down almost all the time, keeping a stable rolling platform.",
+          "minProgress": 1,
+          "maxAbsAngleDeg": 24,
+          "minGroundedWheelRatio": 2.05,
+          "minFramesWithTwoWheels": 0.85,
+          "minAvgSpeed": 40,
+          "maxSingleSupportPeak": 0.18
+        },
+        "metrics": {
+          "cleared": true,
+          "progress": 1.0005271874819148,
+          "avgGroundedWheels": 3,
+          "avgGroundedLegs": 0,
+          "avgGroundedSupports": 3,
+          "framesWithTwoWheelsRatio": 1,
+          "framesWithTwoLegsRatio": 0,
+          "avgSpeed": 44.24247619125387,
+          "maxAbsAngleDeg": 6.879471344999952,
+          "singleSupportPeak": 0,
+          "steps": 1221
+        },
+        "ok": true,
+        "failures": []
+      },
+      {
+        "fixture": "crawler",
+        "level": 1,
+        "expectation": {
+          "summary": "Multiple legs maintain broad support and crawl steadily with little lift-off.",
+          "minProgress": 1,
+          "maxAbsAngleDeg": 28,
+          "minGroundedLegRatio": 1.45,
+          "minFramesWithTwoLegs": 0.5,
+          "minAvgSpeed": 24,
+          "maxSingleSupportPeak": 0.3
+        },
+        "metrics": {
+          "cleared": true,
+          "progress": 1.0004602589573142,
+          "avgGroundedWheels": 0,
+          "avgGroundedLegs": 2.933303690529124,
+          "avgGroundedSupports": 2.933303690529124,
+          "framesWithTwoWheelsRatio": 0,
+          "framesWithTwoLegsRatio": 1,
+          "avgSpeed": 24.664474781057116,
+          "maxAbsAngleDeg": 18.290581475721567,
+          "singleSupportPeak": 0,
+          "steps": 2249
+        },
+        "ok": true,
+        "failures": []
+      },
+      {
+        "fixture": "glider",
+        "level": 1,
+        "expectation": {
+          "summary": "The body stays low and stable, skimming forward without pitching wildly or stalling.",
+          "minProgress": 1,
+          "maxAbsAngleDeg": 30,
+          "minGroundedSupportRatio": 0.03,
+          "minAvgSpeed": 30,
+          "maxSingleSupportPeak": 40
+        },
+        "metrics": {
+          "cleared": true,
+          "progress": 1.0005706210080716,
+          "avgGroundedWheels": 0,
+          "avgGroundedLegs": 0,
+          "avgGroundedSupports": 0.04483837330552659,
+          "framesWithTwoWheelsRatio": 0,
+          "framesWithTwoLegsRatio": 0,
+          "avgSpeed": 56.356729517836406,
+          "maxAbsAngleDeg": 8.58784164526453,
+          "singleSupportPeak": 0.18333333333333332,
+          "steps": 959
+        },
+        "ok": true,
+        "failures": []
+      },
+      {
+        "fixture": "climber",
+        "level": 1,
+        "expectation": {
+          "summary": "Legs provide the main support on flat ground while arms do not destabilize the chassis.",
+          "minProgress": 1,
+          "maxAbsAngleDeg": 30,
+          "minGroundedLegRatio": 1.1,
+          "minFramesWithTwoLegs": 0.2,
+          "minAvgSpeed": 24,
+          "maxSingleSupportPeak": 0.42
+        },
+        "metrics": {
+          "cleared": true,
+          "progress": 1.0003165419504592,
+          "avgGroundedWheels": 0,
+          "avgGroundedLegs": 2,
+          "avgGroundedSupports": 2,
+          "framesWithTwoWheelsRatio": 0,
+          "framesWithTwoLegsRatio": 1,
+          "avgSpeed": 24.19957650097765,
+          "maxAbsAngleDeg": 15.229243922735375,
+          "singleSupportPeak": 0,
+          "steps": 2238
+        },
+        "ok": true,
+        "failures": []
+      }
+    ]
+  },
+  "quality": {
+    "at": "2026-03-13T00:14:38.129Z",
+    "calibration": {
+      "driveGain": 1,
+      "gripGain": 0.54,
+      "shapeGain": 0.46,
+      "spinGain": 0.7,
+      "dampingGain": 0.34,
+      "trialShapes": 90,
+      "coarseModels": 54,
+      "refinedModels": 81,
+      "score": 0
+    },
+    "tuning": {
+      "wheelDrive": 1.14,
+      "wheelTraction": 1.1,
+      "wheelCruise": 0.94,
+      "legDrive": 1.08,
+      "legStride": 0.94,
+      "legPlant": 0.94,
+      "legCruise": 1.08,
+      "legLift": 1,
+      "suspensionRide": 1,
+      "suspensionSnap": 1,
+      "airBalance": 1,
+      "armPull": 1,
+      "frictionGrip": 1,
+      "score": 6379.599195978141,
+      "warmupClears": 6,
+      "tunedAt": "2026-03-13T00:14:35.598Z"
+    },
+    "warmup": {
+      "fixtures": 6,
+      "clears": 6,
+      "allPassed": true,
+      "results": [
+        {
+          "fixture": "wheel-cart",
+          "level": 1,
+          "analyzed": true,
+          "cleared": true,
+          "progress": 1.0005059953801798,
+          "reason": "clear",
+          "singleSupportPeak": 0
+        },
+        {
+          "fixture": "walker",
+          "level": 1,
+          "analyzed": true,
+          "cleared": true,
+          "progress": 1.000492178324361,
+          "reason": "clear",
+          "singleSupportPeak": 0
+        },
+        {
+          "fixture": "trike",
+          "level": 1,
+          "analyzed": true,
+          "cleared": true,
+          "progress": 1.0006137006791145,
+          "reason": "clear",
+          "singleSupportPeak": 0
+        },
+        {
+          "fixture": "crawler",
+          "level": 1,
+          "analyzed": true,
+          "cleared": true,
+          "progress": 1.0007725342376224,
+          "reason": "clear",
+          "singleSupportPeak": 0
+        },
+        {
+          "fixture": "glider",
+          "level": 1,
+          "analyzed": true,
+          "cleared": true,
+          "progress": 1.0002816874565705,
+          "reason": "clear",
+          "singleSupportPeak": 0.18333333333333332
+        },
+        {
+          "fixture": "climber",
+          "level": 1,
+          "analyzed": true,
+          "cleared": true,
+          "progress": 1.0001357712102865,
+          "reason": "clear",
+          "singleSupportPeak": 0
+        }
+      ]
+    },
+    "fixtureExpectations": {
+      "at": "2026-03-13T00:14:36.036Z",
+      "passed": 6,
+      "total": 6,
+      "ok": true,
+      "audits": [
+        {
+          "fixture": "wheel-cart",
+          "level": 1,
+          "expectation": {
+            "summary": "Both wheels stay planted on flat ground and roll the cart forward without hopping.",
+            "minProgress": 1,
+            "maxAbsAngleDeg": 26,
+            "minGroundedWheelRatio": 1.75,
+            "minFramesWithTwoWheels": 0.72,
+            "minAvgSpeed": 36,
+            "maxSingleSupportPeak": 0.22
+          },
+          "metrics": {
+            "cleared": true,
+            "progress": 1.0005059953801798,
+            "avgGroundedWheels": 2,
+            "avgGroundedLegs": 0,
+            "avgGroundedSupports": 2,
+            "framesWithTwoWheelsRatio": 1,
+            "framesWithTwoLegsRatio": 0,
+            "avgSpeed": 37.63817300274583,
+            "maxAbsAngleDeg": 5.447895194209273,
+            "singleSupportPeak": 0,
+            "steps": 1435
+          },
+          "ok": true,
+          "failures": []
+        },
+        {
+          "fixture": "walker",
+          "level": 1,
+          "expectation": {
+            "summary": "Two legs alternate support, with frequent double-support moments and steady walking progress.",
+            "minProgress": 1,
+            "maxAbsAngleDeg": 32,
+            "minGroundedLegRatio": 1.1,
+            "minFramesWithTwoLegs": 0.22,
+            "minAvgSpeed": 26,
+            "maxSingleSupportPeak": 0.5
+          },
+          "metrics": {
+            "cleared": true,
+            "progress": 1.000492178324361,
+            "avgGroundedWheels": 0,
+            "avgGroundedLegs": 1.9957150508837707,
+            "avgGroundedSupports": 1.9957150508837707,
+            "framesWithTwoWheelsRatio": 0,
+            "framesWithTwoLegsRatio": 0.9957150508837708,
+            "avgSpeed": 29.02373560788317,
+            "maxAbsAngleDeg": 16.42043996159299,
+            "singleSupportPeak": 0,
+            "steps": 1867
+          },
+          "ok": true,
+          "failures": []
+        },
+        {
+          "fixture": "trike",
+          "level": 1,
+          "expectation": {
+            "summary": "At least two wheels stay down almost all the time, keeping a stable rolling platform.",
+            "minProgress": 1,
+            "maxAbsAngleDeg": 24,
+            "minGroundedWheelRatio": 2.05,
+            "minFramesWithTwoWheels": 0.85,
+            "minAvgSpeed": 40,
+            "maxSingleSupportPeak": 0.18
+          },
+          "metrics": {
+            "cleared": true,
+            "progress": 1.0006137006791145,
+            "avgGroundedWheels": 3,
+            "avgGroundedLegs": 0,
+            "avgGroundedSupports": 3,
+            "framesWithTwoWheelsRatio": 1,
+            "framesWithTwoLegsRatio": 0,
+            "avgSpeed": 45.21465242131795,
+            "maxAbsAngleDeg": 6.597089380752528,
+            "singleSupportPeak": 0,
+            "steps": 1195
+          },
+          "ok": true,
+          "failures": []
+        },
+        {
+          "fixture": "crawler",
+          "level": 1,
+          "expectation": {
+            "summary": "Multiple legs maintain broad support and crawl steadily with little lift-off.",
+            "minProgress": 1,
+            "maxAbsAngleDeg": 28,
+            "minGroundedLegRatio": 1.45,
+            "minFramesWithTwoLegs": 0.5,
+            "minAvgSpeed": 24,
+            "maxSingleSupportPeak": 0.3
+          },
+          "metrics": {
+            "cleared": true,
+            "progress": 1.0007725342376224,
+            "avgGroundedWheels": 0,
+            "avgGroundedLegs": 2.932471264367816,
+            "avgGroundedSupports": 2.932471264367816,
+            "framesWithTwoWheelsRatio": 0,
+            "framesWithTwoLegsRatio": 1,
+            "avgSpeed": 26.177628447645777,
+            "maxAbsAngleDeg": 17.970984320516216,
+            "singleSupportPeak": 0,
+            "steps": 2088
+          },
+          "ok": true,
+          "failures": []
+        },
+        {
+          "fixture": "glider",
+          "level": 1,
+          "expectation": {
+            "summary": "The body stays low and stable, skimming forward without pitching wildly or stalling.",
+            "minProgress": 1,
+            "maxAbsAngleDeg": 30,
+            "minGroundedSupportRatio": 0.03,
+            "minAvgSpeed": 30,
+            "maxSingleSupportPeak": 40
+          },
+          "metrics": {
+            "cleared": true,
+            "progress": 1.0002816874565705,
+            "avgGroundedWheels": 0,
+            "avgGroundedLegs": 0,
+            "avgGroundedSupports": 0.045081967213114756,
+            "framesWithTwoWheelsRatio": 0,
+            "framesWithTwoLegsRatio": 0,
+            "avgSpeed": 55.35730647593087,
+            "maxAbsAngleDeg": 11.07937539755137,
+            "singleSupportPeak": 0.18333333333333332,
+            "steps": 976
+          },
+          "ok": true,
+          "failures": []
+        },
+        {
+          "fixture": "climber",
+          "level": 1,
+          "expectation": {
+            "summary": "Legs provide the main support on flat ground while arms do not destabilize the chassis.",
+            "minProgress": 1,
+            "maxAbsAngleDeg": 30,
+            "minGroundedLegRatio": 1.1,
+            "minFramesWithTwoLegs": 0.2,
+            "minAvgSpeed": 24,
+            "maxSingleSupportPeak": 0.42
+          },
+          "metrics": {
+            "cleared": true,
+            "progress": 1.0001357712102865,
+            "avgGroundedWheels": 0,
+            "avgGroundedLegs": 2,
+            "avgGroundedSupports": 2,
+            "framesWithTwoWheelsRatio": 0,
+            "framesWithTwoLegsRatio": 1,
+            "avgSpeed": 26.05886096653503,
+            "maxAbsAngleDeg": 15.080001729074791,
+            "singleSupportPeak": 0,
+            "steps": 2072
+          },
+          "ok": true,
+          "failures": []
+        }
+      ]
+    },
+    "regression": {
+      "at": "2026-03-13T00:14:36.736Z",
+      "cases": 30,
+      "analyzed": 30,
+      "cleared": 15,
+      "clearRate": 0.5,
+      "warmup": {
+        "cases": 6,
+        "clears": 6,
+        "allPassed": true
+      },
+      "tuning": {
+        "wheelDrive": 1.14,
+        "wheelTraction": 1.1,
+        "wheelCruise": 0.94,
+        "legDrive": 1.08,
+        "legStride": 0.94,
+        "legPlant": 0.94,
+        "legCruise": 1.08,
+        "legLift": 1,
+        "suspensionRide": 1,
+        "suspensionSnap": 1,
+        "airBalance": 1,
+        "armPull": 1,
+        "frictionGrip": 1,
+        "score": 6379.599195978141,
+        "warmupClears": 6,
+        "tunedAt": "2026-03-13T00:14:35.598Z"
+      },
+      "byFixture": {
+        "wheel-cart": {
+          "trials": 5,
+          "clears": 2,
+          "avgProgress": 0.72422938962371
+        },
+        "walker": {
+          "trials": 5,
+          "clears": 2,
+          "avgProgress": 0.6481725443567306
+        },
+        "trike": {
+          "trials": 5,
+          "clears": 3,
+          "avgProgress": 0.7408653492138837
+        },
+        "crawler": {
+          "trials": 5,
+          "clears": 2,
+          "avgProgress": 0.6476079211636814
+        },
+        "glider": {
+          "trials": 5,
+          "clears": 4,
+          "avgProgress": 0.8823406653271055
+        },
+        "climber": {
+          "trials": 5,
+          "clears": 2,
+          "avgProgress": 0.6393825222711685
+        }
+      },
+      "byReason": {
+        "clear": 15,
+        "stuck": 11,
+        "timeout": 4
+      },
+      "results": [
+        {
+          "fixture": "wheel-cart",
+          "level": 1,
+          "analyzed": true,
+          "cleared": true,
+          "progress": 1.0005059953801798,
+          "reason": "clear",
+          "singleSupportPeak": 0
+        },
+        {
+          "fixture": "wheel-cart",
+          "level": 2,
+          "analyzed": true,
+          "cleared": false,
+          "progress": 0.410412173994174,
+          "reason": "stuck",
+          "singleSupportPeak": 0.03333333333333333
+        },
+        {
+          "fixture": "wheel-cart",
+          "level": 3,
+          "analyzed": true,
+          "cleared": true,
+          "progress": 1.0000039047756817,
+          "reason": "clear",
+          "singleSupportPeak": 0
+        },
+        {
+          "fixture": "wheel-cart",
+          "level": 4,
+          "analyzed": true,
+          "cleared": false,
+          "progress": 0.9174469020418355,
+          "reason": "timeout",
+          "singleSupportPeak": 0
+        },
+        {
+          "fixture": "wheel-cart",
+          "level": 5,
+          "analyzed": true,
+          "cleared": false,
+          "progress": 0.29277797192667876,
+          "reason": "stuck",
+          "singleSupportPeak": 0.6000000000000002
+        },
+        {
+          "fixture": "walker",
+          "level": 1,
+          "analyzed": true,
+          "cleared": true,
+          "progress": 1.000492178324361,
+          "reason": "clear",
+          "singleSupportPeak": 0
+        },
+        {
+          "fixture": "walker",
+          "level": 2,
+          "analyzed": true,
+          "cleared": false,
+          "progress": 0.40502631268768075,
+          "reason": "stuck",
+          "singleSupportPeak": 0
+        },
+        {
+          "fixture": "walker",
+          "level": 3,
+          "analyzed": true,
+          "cleared": true,
+          "progress": 1.000002825042054,
+          "reason": "clear",
+          "singleSupportPeak": 0
+        },
+        {
+          "fixture": "walker",
+          "level": 4,
+          "analyzed": true,
+          "cleared": false,
+          "progress": 0.544954264317416,
+          "reason": "timeout",
+          "singleSupportPeak": 0
+        },
+        {
+          "fixture": "walker",
+          "level": 5,
+          "analyzed": true,
+          "cleared": false,
+          "progress": 0.2903871414121407,
+          "reason": "stuck",
+          "singleSupportPeak": 0
+        },
+        {
+          "fixture": "trike",
+          "level": 1,
+          "analyzed": true,
+          "cleared": true,
+          "progress": 1.0006137006791145,
+          "reason": "clear",
+          "singleSupportPeak": 0
+        },
+        {
+          "fixture": "trike",
+          "level": 2,
+          "analyzed": true,
+          "cleared": false,
+          "progress": 0.41043799553950616,
+          "reason": "stuck",
+          "singleSupportPeak": 0.016666666666666666
+        },
+        {
+          "fixture": "trike",
+          "level": 3,
+          "analyzed": true,
+          "cleared": true,
+          "progress": 1.000284368957414,
+          "reason": "clear",
+          "singleSupportPeak": 0
+        },
+        {
+          "fixture": "trike",
+          "level": 4,
+          "analyzed": true,
+          "cleared": true,
+          "progress": 1.0001241546843447,
+          "reason": "clear",
+          "singleSupportPeak": 0
+        },
+        {
+          "fixture": "trike",
+          "level": 5,
+          "analyzed": true,
+          "cleared": false,
+          "progress": 0.29286652620903897,
+          "reason": "stuck",
+          "singleSupportPeak": 0
+        },
+        {
+          "fixture": "crawler",
+          "level": 1,
+          "analyzed": true,
+          "cleared": true,
+          "progress": 1.0007725342376224,
+          "reason": "clear",
+          "singleSupportPeak": 0
+        },
+        {
+          "fixture": "crawler",
+          "level": 2,
+          "analyzed": true,
+          "cleared": false,
+          "progress": 0.41106599484087064,
+          "reason": "stuck",
+          "singleSupportPeak": 0
+        },
+        {
+          "fixture": "crawler",
+          "level": 3,
+          "analyzed": true,
+          "cleared": true,
+          "progress": 1.0003468889244578,
+          "reason": "clear",
+          "singleSupportPeak": 0
+        },
+        {
+          "fixture": "crawler",
+          "level": 4,
+          "analyzed": true,
+          "cleared": false,
+          "progress": 0.5346065945210033,
+          "reason": "timeout",
+          "singleSupportPeak": 0
+        },
+        {
+          "fixture": "crawler",
+          "level": 5,
+          "analyzed": true,
+          "cleared": false,
+          "progress": 0.2912475932944531,
+          "reason": "stuck",
+          "singleSupportPeak": 0
+        },
+        {
+          "fixture": "glider",
+          "level": 1,
+          "analyzed": true,
+          "cleared": true,
+          "progress": 1.0002816874565705,
+          "reason": "clear",
+          "singleSupportPeak": 0.18333333333333332
+        },
+        {
+          "fixture": "glider",
+          "level": 2,
+          "analyzed": true,
+          "cleared": false,
+          "progress": 0.4104844357711886,
+          "reason": "stuck",
+          "singleSupportPeak": 6.099999999999984
+        },
+        {
+          "fixture": "glider",
+          "level": 3,
+          "analyzed": true,
+          "cleared": true,
+          "progress": 1.0005905823689296,
+          "reason": "clear",
+          "singleSupportPeak": 0.18333333333333332
+        },
+        {
+          "fixture": "glider",
+          "level": 4,
+          "analyzed": true,
+          "cleared": true,
+          "progress": 1.0003096336203061,
+          "reason": "clear",
+          "singleSupportPeak": 0.4666666666666666
+        },
+        {
+          "fixture": "glider",
+          "level": 5,
+          "analyzed": true,
+          "cleared": true,
+          "progress": 1.0000369874185329,
+          "reason": "clear",
+          "singleSupportPeak": 1.8333333333333306
+        },
+        {
+          "fixture": "climber",
+          "level": 1,
+          "analyzed": true,
+          "cleared": true,
+          "progress": 1.0001357712102865,
+          "reason": "clear",
+          "singleSupportPeak": 0
+        },
+        {
+          "fixture": "climber",
+          "level": 2,
+          "analyzed": true,
+          "cleared": false,
+          "progress": 0.40905436211694074,
+          "reason": "stuck",
+          "singleSupportPeak": 0
+        },
+        {
+          "fixture": "climber",
+          "level": 3,
+          "analyzed": true,
+          "cleared": true,
+          "progress": 1.0005548070153663,
+          "reason": "clear",
+          "singleSupportPeak": 0
+        },
+        {
+          "fixture": "climber",
+          "level": 4,
+          "analyzed": true,
+          "cleared": false,
+          "progress": 0.5023271759181007,
+          "reason": "timeout",
+          "singleSupportPeak": 0
+        },
+        {
+          "fixture": "climber",
+          "level": 5,
+          "analyzed": true,
+          "cleared": false,
+          "progress": 0.2848404950951485,
+          "reason": "stuck",
+          "singleSupportPeak": 0
+        }
+      ]
+    },
+    "randomBatches": [
+      {
+        "seed": "rig-node-a",
+        "at": "2026-03-13T00:14:37.642Z",
+        "trials": 12,
+        "analyzed": 12,
+        "cleared": 0,
+        "clearRate": 0,
+        "avgProgress": 0.3310148990877026,
+        "byReason": {
+          "stuck": 6,
+          "timeout": 6
+        },
+        "samples": [
+          {
+            "level": 2,
+            "analyzed": true,
+            "cleared": false,
+            "progress": 0.08306154870516215,
+            "reason": "stuck"
+          },
+          {
+            "level": 4,
+            "analyzed": true,
+            "cleared": false,
+            "progress": 0.11753063801307613,
+            "reason": "stuck"
+          },
+          {
+            "level": 5,
+            "analyzed": true,
+            "cleared": false,
+            "progress": 0.12493347964074612,
+            "reason": "stuck"
+          },
+          {
+            "level": 4,
+            "analyzed": true,
+            "cleared": false,
+            "progress": 0.5816388930158127,
+            "reason": "timeout"
+          },
+          {
+            "level": 5,
+            "analyzed": true,
+            "cleared": false,
+            "progress": 0.2926016807780222,
+            "reason": "stuck"
+          },
+          {
+            "level": 3,
+            "analyzed": true,
+            "cleared": false,
+            "progress": 0.6705491010322201,
+            "reason": "timeout"
+          },
+          {
+            "level": 4,
+            "analyzed": true,
+            "cleared": false,
+            "progress": 0.5604452381021642,
+            "reason": "timeout"
+          },
+          {
+            "level": 5,
+            "analyzed": true,
+            "cleared": false,
+            "progress": 0.2914276839170272,
+            "reason": "stuck"
+          },
+          {
+            "level": 1,
+            "analyzed": true,
+            "cleared": false,
+            "progress": 0.30672879464056824,
+            "reason": "timeout"
+          },
+          {
+            "level": 4,
+            "analyzed": true,
+            "cleared": false,
+            "progress": 0.5468902606641705,
+            "reason": "timeout"
+          },
+          {
+            "level": 5,
+            "analyzed": true,
+            "cleared": false,
+            "progress": 0.20182863440882023,
+            "reason": "stuck"
+          },
+          {
+            "level": 3,
+            "analyzed": true,
+            "cleared": false,
+            "progress": 0.1945428361346412,
+            "reason": "timeout"
+          }
+        ]
+      },
+      {
+        "seed": "rig-node-b",
+        "at": "2026-03-13T00:14:38.129Z",
+        "trials": 12,
+        "analyzed": 12,
+        "cleared": 1,
+        "clearRate": 0.08333333333333333,
+        "avgProgress": 0.352228018931625,
+        "byReason": {
+          "stuck": 8,
+          "clear": 1,
+          "timeout": 3
+        },
+        "samples": [
+          {
+            "level": 2,
+            "analyzed": true,
+            "cleared": false,
+            "progress": 0.1732803315767278,
+            "reason": "stuck"
+          },
+          {
+            "level": 5,
+            "analyzed": true,
+            "cleared": false,
+            "progress": 0.2924827532639953,
+            "reason": "stuck"
+          },
+          {
+            "level": 1,
+            "analyzed": true,
+            "cleared": false,
+            "progress": 0.19821258101824127,
+            "reason": "stuck"
+          },
+          {
+            "level": 1,
+            "analyzed": true,
+            "cleared": true,
+            "progress": 1.0000928925220332,
+            "reason": "clear"
+          },
+          {
+            "level": 4,
+            "analyzed": true,
+            "cleared": false,
+            "progress": 0.5554279238991852,
+            "reason": "timeout"
+          },
+          {
+            "level": 2,
+            "analyzed": true,
+            "cleared": false,
+            "progress": 0.40808509046714225,
+            "reason": "stuck"
+          },
+          {
+            "level": 2,
+            "analyzed": true,
+            "cleared": false,
+            "progress": 0.16828340922861754,
+            "reason": "stuck"
+          },
+          {
+            "level": 5,
+            "analyzed": true,
+            "cleared": false,
+            "progress": 0.12118529119139472,
+            "reason": "stuck"
+          },
+          {
+            "level": 4,
+            "analyzed": true,
+            "cleared": false,
+            "progress": 0.5964417023334803,
+            "reason": "timeout"
+          },
+          {
+            "level": 1,
+            "analyzed": true,
+            "cleared": false,
+            "progress": 0.22770603075731677,
+            "reason": "timeout"
+          },
+          {
+            "level": 1,
+            "analyzed": true,
+            "cleared": false,
+            "progress": 0.34463037095539395,
+            "reason": "stuck"
+          },
+          {
+            "level": 4,
+            "analyzed": true,
+            "cleared": false,
+            "progress": 0.14090784996597205,
+            "reason": "stuck"
+          }
+        ]
+      }
+    ],
+    "avgRandomClearRate": 0.041666666666666664,
+    "avgRandomProgress": 0.3416214590096638,
+    "fixtureHealth": {
+      "warmupFailures": [],
+      "fullFailures": [
+        "wheel-cart",
+        "walker",
+        "trike",
+        "crawler",
+        "glider",
+        "climber"
+      ]
+    },
+    "ok": true
+  }
+}

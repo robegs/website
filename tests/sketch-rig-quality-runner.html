@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Sketch Rig Quality Runner</title>
+    <link rel="stylesheet" href="../experiments.css" />
+    <style>
+      body { margin: 0; background: #0f172a; color: #e2e8f0; font: 14px/1.5 "Space Grotesk", sans-serif; }
+      .wrap { padding: 16px; }
+      #test-output { white-space: pre-wrap; font-family: ui-monospace, Consolas, monospace; background: rgba(15,23,42,0.82); padding: 12px; border: 1px solid rgba(148,163,184,0.25); border-radius: 12px; }
+      #game-list, #game-meta { display: none; }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <div id="game-list"></div>
+      <div id="game-meta"></div>
+      <div id="game-mount"></div>
+      <pre id="test-output">booting...</pre>
+    </div>
+    <script>
+      window.ExperimentsGames = [];
+      window.__qualityRunnerDone = false;
+      window.__qualityRunnerError = null;
+      window.requestAnimationFrame = function () { return 0; };
+      window.cancelAnimationFrame = function () {};
+    </script>
+    <script src="../games/brick-breaker.js"></script>
+    <script src="../games/packet-defender.js"></script>
+    <script src="../games/target-rush.js"></script>
+    <script src="../games/cipher-memory.js"></script>
+    <script src="../games/pixel-platformer-levels.js"></script>
+    <script src="../games/pixel-platformer.js"></script>
+    <script src="../games/neon-rift-rally.js"></script>
+    <script src="../games/sketch-rig-challenge.js"></script>
+    <script src="../experiments.js"></script>
+    <script>
+      (function () {
+        const out = document.getElementById("test-output");
+        const setOut = function (value) {
+          out.textContent = typeof value === "string" ? value : JSON.stringify(value, null, 2);
+        };
+        const poll = function () {
+          if (typeof window.runSketchRigQualitySuite !== "function") {
+            window.setTimeout(poll, 50);
+            return;
+          }
+          window.runSketchRigQualitySuite({ randomTrials: 18, randomSeeds: ["quality-a", "quality-b", "quality-c", "quality-d"] })
+            .then(function (result) {
+              setOut(result);
+              window.__qualityRunnerDone = true;
+              document.body.setAttribute("data-quality-ok", result && result.ok ? "true" : "false");
+              console.log("SKETCH_RIG_QUALITY_RESULT " + JSON.stringify(result));
+            })
+            .catch(function (error) {
+              const payload = { ok: false, error: String(error && error.stack || error) };
+              setOut(payload);
+              window.__qualityRunnerDone = true;
+              window.__qualityRunnerError = payload.error;
+              document.body.setAttribute("data-quality-ok", "false");
+              console.error("SKETCH_RIG_QUALITY_RESULT " + JSON.stringify(payload));
+            });
+        };
+        poll();
+      })();
+    </script>
+  </body>
+</html>
