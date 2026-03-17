@@ -1,8 +1,8 @@
 {
   "fixtureExpectations": {
-    "at": "2026-03-13T00:11:40.759Z",
-    "passed": 6,
-    "total": 6,
+    "at": "2026-03-17T15:12:22.372Z",
+    "passed": 7,
+    "total": 7,
     "ok": true,
     "audits": [
       {
@@ -19,16 +19,44 @@
         },
         "metrics": {
           "cleared": true,
-          "progress": 1.0004986768609825,
+          "progress": 1.0000467940116242,
           "avgGroundedWheels": 2,
           "avgGroundedLegs": 0,
           "avgGroundedSupports": 2,
           "framesWithTwoWheelsRatio": 1,
           "framesWithTwoLegsRatio": 0,
-          "avgSpeed": 37.269016529760115,
-          "maxAbsAngleDeg": 5.5039818809955285,
+          "avgSpeed": 43.0790995083665,
+          "maxAbsAngleDeg": 18.334649444186343,
           "singleSupportPeak": 0,
-          "steps": 1449
+          "steps": 1255
+        },
+        "ok": true,
+        "failures": []
+      },
+      {
+        "fixture": "uneven-cart",
+        "level": 1,
+        "expectation": {
+          "summary": "A cart with different wheel sizes still keeps both wheels grounded on flat terrain.",
+          "minProgress": 1,
+          "maxAbsAngleDeg": 28,
+          "minGroundedWheelRatio": 1.8,
+          "minFramesWithTwoWheels": 0.76,
+          "minAvgSpeed": 34,
+          "maxSingleSupportPeak": 0.24
+        },
+        "metrics": {
+          "cleared": true,
+          "progress": 1.0006794805940626,
+          "avgGroundedWheels": 2,
+          "avgGroundedLegs": 0,
+          "avgGroundedSupports": 2,
+          "framesWithTwoWheelsRatio": 1,
+          "framesWithTwoLegsRatio": 0,
+          "avgSpeed": 42.56589569479341,
+          "maxAbsAngleDeg": 18.334649444186343,
+          "singleSupportPeak": 0,
+          "steps": 1271
         },
         "ok": true,
         "failures": []
@@ -47,16 +75,16 @@
         },
         "metrics": {
           "cleared": true,
-          "progress": 1.0004898988069493,
+          "progress": 1.0003115293733222,
           "avgGroundedWheels": 0,
-          "avgGroundedLegs": 1.9989350372736954,
-          "avgGroundedSupports": 1.9989350372736954,
+          "avgGroundedLegs": 1.9261954261954262,
+          "avgGroundedSupports": 1.9261954261954262,
           "framesWithTwoWheelsRatio": 0,
-          "framesWithTwoLegsRatio": 0.9989350372736954,
-          "avgSpeed": 28.735518109188614,
-          "maxAbsAngleDeg": 16.419029711174662,
+          "framesWithTwoLegsRatio": 0.9261954261954262,
+          "avgSpeed": 28.53732536129946,
+          "maxAbsAngleDeg": 15.593933192619579,
           "singleSupportPeak": 0,
-          "steps": 1878
+          "steps": 1924
         },
         "ok": true,
         "failures": []
@@ -75,16 +103,16 @@
         },
         "metrics": {
           "cleared": true,
-          "progress": 1.0005271874819148,
+          "progress": 1.0001209810992981,
           "avgGroundedWheels": 3,
           "avgGroundedLegs": 0,
           "avgGroundedSupports": 3,
           "framesWithTwoWheelsRatio": 1,
           "framesWithTwoLegsRatio": 0,
-          "avgSpeed": 44.24247619125387,
-          "maxAbsAngleDeg": 6.879471344999952,
+          "avgSpeed": 51.60009628666007,
+          "maxAbsAngleDeg": 18.334649444186343,
           "singleSupportPeak": 0,
-          "steps": 1221
+          "steps": 1048
         },
         "ok": true,
         "failures": []
@@ -103,16 +131,16 @@
         },
         "metrics": {
           "cleared": true,
-          "progress": 1.0004602589573142,
+          "progress": 1.000697371838835,
           "avgGroundedWheels": 0,
-          "avgGroundedLegs": 2.933303690529124,
-          "avgGroundedSupports": 2.933303690529124,
+          "avgGroundedLegs": 2.7675415104445635,
+          "avgGroundedSupports": 2.7675415104445635,
           "framesWithTwoWheelsRatio": 0,
-          "framesWithTwoLegsRatio": 1,
-          "avgSpeed": 24.664474781057116,
-          "maxAbsAngleDeg": 18.290581475721567,
+          "framesWithTwoLegsRatio": 0.9796464916979111,
+          "avgSpeed": 29.229594088271334,
+          "maxAbsAngleDeg": 15.395018220844376,
           "singleSupportPeak": 0,
-          "steps": 2249
+          "steps": 1867
         },
         "ok": true,
         "failures": []
@@ -121,25 +149,25 @@
         "fixture": "glider",
         "level": 1,
         "expectation": {
-          "summary": "The body stays low and stable, skimming forward without pitching wildly or stalling.",
-          "minProgress": 1,
+          "summary": "Tail-and-fin rigs do not self-propel on flat ground; they only stabilize if external speed exists.",
+          "maxProgress": 0.2,
           "maxAbsAngleDeg": 30,
-          "minGroundedSupportRatio": 0.03,
-          "minAvgSpeed": 30,
-          "maxSingleSupportPeak": 40
+          "maxAvgSpeed": 10,
+          "maxSingleSupportPeak": 40,
+          "requiresWarmupClear": false
         },
         "metrics": {
-          "cleared": true,
-          "progress": 1.0005706210080716,
+          "cleared": false,
+          "progress": 0.08980372135446976,
           "avgGroundedWheels": 0,
           "avgGroundedLegs": 0,
-          "avgGroundedSupports": 0.04483837330552659,
+          "avgGroundedSupports": 0.4366812227074236,
           "framesWithTwoWheelsRatio": 0,
           "framesWithTwoLegsRatio": 0,
-          "avgSpeed": 56.356729517836406,
-          "maxAbsAngleDeg": 8.58784164526453,
-          "singleSupportPeak": 0.18333333333333332,
-          "steps": 959
+          "avgSpeed": 1.0465632508915144,
+          "maxAbsAngleDeg": 2.3621361734683997,
+          "singleSupportPeak": 0.8500000000000024,
+          "steps": 229
         },
         "ok": true,
         "failures": []
@@ -158,16 +186,16 @@
         },
         "metrics": {
           "cleared": true,
-          "progress": 1.0003165419504592,
+          "progress": 1.0000112313395249,
           "avgGroundedWheels": 0,
-          "avgGroundedLegs": 2,
-          "avgGroundedSupports": 2,
+          "avgGroundedLegs": 1.976280834914611,
+          "avgGroundedSupports": 1.976280834914611,
           "framesWithTwoWheelsRatio": 0,
-          "framesWithTwoLegsRatio": 1,
-          "avgSpeed": 24.19957650097765,
-          "maxAbsAngleDeg": 15.229243922735375,
+          "framesWithTwoLegsRatio": 0.976280834914611,
+          "avgSpeed": 25.700550593218956,
+          "maxAbsAngleDeg": 10.683192725786272,
           "singleSupportPeak": 0,
-          "steps": 2238
+          "steps": 2108
         },
         "ok": true,
         "failures": []
@@ -175,7 +203,7 @@
     ]
   },
   "quality": {
-    "at": "2026-03-13T00:14:38.129Z",
+    "at": "2026-03-17T15:19:10.932Z",
     "calibration": {
       "driveGain": 1,
       "gripGain": 0.54,
@@ -190,10 +218,10 @@
     "tuning": {
       "wheelDrive": 1.14,
       "wheelTraction": 1.1,
-      "wheelCruise": 0.94,
-      "legDrive": 1.08,
-      "legStride": 0.94,
-      "legPlant": 0.94,
+      "wheelCruise": 1.08,
+      "legDrive": 0.96,
+      "legStride": 1.1,
+      "legPlant": 1.08,
       "legCruise": 1.08,
       "legLift": 1,
       "suspensionRide": 1,
@@ -201,9 +229,9 @@
       "airBalance": 1,
       "armPull": 1,
       "frictionGrip": 1,
-      "score": 6379.599195978141,
+      "score": 6024.401467179915,
       "warmupClears": 6,
-      "tunedAt": "2026-03-13T00:14:35.598Z"
+      "tunedAt": "2026-03-17T15:19:08.400Z"
     },
     "warmup": {
       "fixtures": 6,
@@ -215,7 +243,16 @@
           "level": 1,
           "analyzed": true,
           "cleared": true,
-          "progress": 1.0005059953801798,
+          "progress": 1.000714901012388,
+          "reason": "clear",
+          "singleSupportPeak": 0
+        },
+        {
+          "fixture": "uneven-cart",
+          "level": 1,
+          "analyzed": true,
+          "cleared": true,
+          "progress": 1.0007667195366319,
           "reason": "clear",
           "singleSupportPeak": 0
         },
@@ -224,7 +261,7 @@
           "level": 1,
           "analyzed": true,
           "cleared": true,
-          "progress": 1.000492178324361,
+          "progress": 1.000026817033518,
           "reason": "clear",
           "singleSupportPeak": 0
         },
@@ -233,7 +270,7 @@
           "level": 1,
           "analyzed": true,
           "cleared": true,
-          "progress": 1.0006137006791145,
+          "progress": 1.000517510613569,
           "reason": "clear",
           "singleSupportPeak": 0
         },
@@ -242,7 +279,7 @@
           "level": 1,
           "analyzed": true,
           "cleared": true,
-          "progress": 1.0007725342376224,
+          "progress": 1.0010171081040444,
           "reason": "clear",
           "singleSupportPeak": 0
         },
@@ -250,26 +287,26 @@
           "fixture": "glider",
           "level": 1,
           "analyzed": true,
-          "cleared": true,
-          "progress": 1.0002816874565705,
-          "reason": "clear",
-          "singleSupportPeak": 0.18333333333333332
+          "cleared": false,
+          "progress": 0.08933330034762924,
+          "reason": "stuck",
+          "singleSupportPeak": 1.0833333333333357
         },
         {
           "fixture": "climber",
           "level": 1,
           "analyzed": true,
           "cleared": true,
-          "progress": 1.0001357712102865,
+          "progress": 1.0004703125411065,
           "reason": "clear",
           "singleSupportPeak": 0
         }
       ]
     },
     "fixtureExpectations": {
-      "at": "2026-03-13T00:14:36.036Z",
-      "passed": 6,
-      "total": 6,
+      "at": "2026-03-17T15:19:09.067Z",
+      "passed": 7,
+      "total": 7,
       "ok": true,
       "audits": [
         {
@@ -286,16 +323,44 @@
           },
           "metrics": {
             "cleared": true,
-            "progress": 1.0005059953801798,
+            "progress": 1.000714901012388,
             "avgGroundedWheels": 2,
             "avgGroundedLegs": 0,
             "avgGroundedSupports": 2,
             "framesWithTwoWheelsRatio": 1,
             "framesWithTwoLegsRatio": 0,
-            "avgSpeed": 37.63817300274583,
-            "maxAbsAngleDeg": 5.447895194209273,
+            "avgSpeed": 45.65407500620524,
+            "maxAbsAngleDeg": 18.334649444186343,
             "singleSupportPeak": 0,
-            "steps": 1435
+            "steps": 1185
+          },
+          "ok": true,
+          "failures": []
+        },
+        {
+          "fixture": "uneven-cart",
+          "level": 1,
+          "expectation": {
+            "summary": "A cart with different wheel sizes still keeps both wheels grounded on flat terrain.",
+            "minProgress": 1,
+            "maxAbsAngleDeg": 28,
+            "minGroundedWheelRatio": 1.8,
+            "minFramesWithTwoWheels": 0.76,
+            "minAvgSpeed": 34,
+            "maxSingleSupportPeak": 0.24
+          },
+          "metrics": {
+            "cleared": true,
+            "progress": 1.0007667195366319,
+            "avgGroundedWheels": 2,
+            "avgGroundedLegs": 0,
+            "avgGroundedSupports": 2,
+            "framesWithTwoWheelsRatio": 1,
+            "framesWithTwoLegsRatio": 0,
+            "avgSpeed": 45.23563583854526,
+            "maxAbsAngleDeg": 18.334649444186343,
+            "singleSupportPeak": 0,
+            "steps": 1196
           },
           "ok": true,
           "failures": []
@@ -314,16 +379,16 @@
           },
           "metrics": {
             "cleared": true,
-            "progress": 1.000492178324361,
+            "progress": 1.000026817033518,
             "avgGroundedWheels": 0,
-            "avgGroundedLegs": 1.9957150508837707,
-            "avgGroundedSupports": 1.9957150508837707,
+            "avgGroundedLegs": 1.920660276890309,
+            "avgGroundedSupports": 1.920660276890309,
             "framesWithTwoWheelsRatio": 0,
-            "framesWithTwoLegsRatio": 0.9957150508837708,
-            "avgSpeed": 29.02373560788317,
-            "maxAbsAngleDeg": 16.42043996159299,
+            "framesWithTwoLegsRatio": 0.9206602768903088,
+            "avgSpeed": 29.320319342211516,
+            "maxAbsAngleDeg": 15.598535772171422,
             "singleSupportPeak": 0,
-            "steps": 1867
+            "steps": 1878
           },
           "ok": true,
           "failures": []
@@ -342,16 +407,16 @@
           },
           "metrics": {
             "cleared": true,
-            "progress": 1.0006137006791145,
+            "progress": 1.000517510613569,
             "avgGroundedWheels": 3,
             "avgGroundedLegs": 0,
             "avgGroundedSupports": 3,
             "framesWithTwoWheelsRatio": 1,
             "framesWithTwoLegsRatio": 0,
-            "avgSpeed": 45.21465242131795,
-            "maxAbsAngleDeg": 6.597089380752528,
+            "avgSpeed": 54.86530320897755,
+            "maxAbsAngleDeg": 18.334649444186343,
             "singleSupportPeak": 0,
-            "steps": 1195
+            "steps": 986
           },
           "ok": true,
           "failures": []
@@ -370,16 +435,16 @@
           },
           "metrics": {
             "cleared": true,
-            "progress": 1.0007725342376224,
+            "progress": 1.0010171081040444,
             "avgGroundedWheels": 0,
-            "avgGroundedLegs": 2.932471264367816,
-            "avgGroundedSupports": 2.932471264367816,
+            "avgGroundedLegs": 2.7703862660944205,
+            "avgGroundedSupports": 2.7703862660944205,
             "framesWithTwoWheelsRatio": 0,
-            "framesWithTwoLegsRatio": 1,
-            "avgSpeed": 26.177628447645777,
-            "maxAbsAngleDeg": 17.970984320516216,
+            "framesWithTwoLegsRatio": 0.9796137339055794,
+            "avgSpeed": 29.420267790744735,
+            "maxAbsAngleDeg": 15.399541583121795,
             "singleSupportPeak": 0,
-            "steps": 2088
+            "steps": 1864
           },
           "ok": true,
           "failures": []
@@ -388,25 +453,25 @@
           "fixture": "glider",
           "level": 1,
           "expectation": {
-            "summary": "The body stays low and stable, skimming forward without pitching wildly or stalling.",
-            "minProgress": 1,
+            "summary": "Tail-and-fin rigs do not self-propel on flat ground; they only stabilize if external speed exists.",
+            "maxProgress": 0.2,
             "maxAbsAngleDeg": 30,
-            "minGroundedSupportRatio": 0.03,
-            "minAvgSpeed": 30,
-            "maxSingleSupportPeak": 40
+            "maxAvgSpeed": 10,
+            "maxSingleSupportPeak": 40,
+            "requiresWarmupClear": false
           },
           "metrics": {
-            "cleared": true,
-            "progress": 1.0002816874565705,
+            "cleared": false,
+            "progress": 0.08933330034762924,
             "avgGroundedWheels": 0,
             "avgGroundedLegs": 0,
-            "avgGroundedSupports": 0.045081967213114756,
+            "avgGroundedSupports": 0.3624454148471616,
             "framesWithTwoWheelsRatio": 0,
             "framesWithTwoLegsRatio": 0,
-            "avgSpeed": 55.35730647593087,
-            "maxAbsAngleDeg": 11.07937539755137,
-            "singleSupportPeak": 0.18333333333333332,
-            "steps": 976
+            "avgSpeed": 0.9246377453050342,
+            "maxAbsAngleDeg": 4.445005473562193,
+            "singleSupportPeak": 1.0833333333333357,
+            "steps": 229
           },
           "ok": true,
           "failures": []
@@ -425,16 +490,16 @@
           },
           "metrics": {
             "cleared": true,
-            "progress": 1.0001357712102865,
+            "progress": 1.0004703125411065,
             "avgGroundedWheels": 0,
-            "avgGroundedLegs": 2,
-            "avgGroundedSupports": 2,
+            "avgGroundedLegs": 1.97848948374761,
+            "avgGroundedSupports": 1.97848948374761,
             "framesWithTwoWheelsRatio": 0,
-            "framesWithTwoLegsRatio": 1,
-            "avgSpeed": 26.05886096653503,
-            "maxAbsAngleDeg": 15.080001729074791,
+            "framesWithTwoLegsRatio": 0.9784894837476099,
+            "avgSpeed": 25.97374515587537,
+            "maxAbsAngleDeg": 10.450738323465023,
             "singleSupportPeak": 0,
-            "steps": 2072
+            "steps": 2092
           },
           "ok": true,
           "failures": []
@@ -442,11 +507,11 @@
       ]
     },
     "regression": {
-      "at": "2026-03-13T00:14:36.736Z",
-      "cases": 30,
-      "analyzed": 30,
-      "cleared": 15,
-      "clearRate": 0.5,
+      "at": "2026-03-17T15:19:10.120Z",
+      "cases": 35,
+      "analyzed": 35,
+      "cleared": 14,
+      "clearRate": 0.4,
       "warmup": {
         "cases": 6,
         "clears": 6,
@@ -455,10 +520,10 @@
       "tuning": {
         "wheelDrive": 1.14,
         "wheelTraction": 1.1,
-        "wheelCruise": 0.94,
-        "legDrive": 1.08,
-        "legStride": 0.94,
-        "legPlant": 0.94,
+        "wheelCruise": 1.08,
+        "legDrive": 0.96,
+        "legStride": 1.1,
+        "legPlant": 1.08,
         "legCruise": 1.08,
         "legLift": 1,
         "suspensionRide": 1,
@@ -466,46 +531,51 @@
         "airBalance": 1,
         "armPull": 1,
         "frictionGrip": 1,
-        "score": 6379.599195978141,
+        "score": 6024.401467179915,
         "warmupClears": 6,
-        "tunedAt": "2026-03-13T00:14:35.598Z"
+        "tunedAt": "2026-03-17T15:19:08.400Z"
       },
       "byFixture": {
         "wheel-cart": {
           "trials": 5,
+          "clears": 3,
+          "avgProgress": 0.7408195729085636
+        },
+        "uneven-cart": {
+          "trials": 5,
           "clears": 2,
-          "avgProgress": 0.72422938962371
+          "avgProgress": 0.7372375183170586
         },
         "walker": {
           "trials": 5,
           "clears": 2,
-          "avgProgress": 0.6481725443567306
+          "avgProgress": 0.6485325922790949
         },
         "trike": {
           "trials": 5,
           "clears": 3,
-          "avgProgress": 0.7408653492138837
+          "avgProgress": 0.7777127703917127
         },
         "crawler": {
           "trials": 5,
           "clears": 2,
-          "avgProgress": 0.6476079211636814
+          "avgProgress": 0.6462362503100817
         },
         "glider": {
           "trials": 5,
-          "clears": 4,
-          "avgProgress": 0.8823406653271055
+          "clears": 0,
+          "avgProgress": 0.07183065594671821
         },
         "climber": {
           "trials": 5,
           "clears": 2,
-          "avgProgress": 0.6393825222711685
+          "avgProgress": 0.6083535702483099
         }
       },
       "byReason": {
-        "clear": 15,
-        "stuck": 11,
-        "timeout": 4
+        "clear": 14,
+        "stuck": 20,
+        "timeout": 1
       },
       "results": [
         {
@@ -513,7 +583,7 @@
           "level": 1,
           "analyzed": true,
           "cleared": true,
-          "progress": 1.0005059953801798,
+          "progress": 1.000714901012388,
           "reason": "clear",
           "singleSupportPeak": 0
         },
@@ -522,16 +592,16 @@
           "level": 2,
           "analyzed": true,
           "cleared": false,
-          "progress": 0.410412173994174,
+          "progress": 0.4103777364544653,
           "reason": "stuck",
-          "singleSupportPeak": 0.03333333333333333
+          "singleSupportPeak": 0
         },
         {
           "fixture": "wheel-cart",
           "level": 3,
           "analyzed": true,
           "cleared": true,
-          "progress": 1.0000039047756817,
+          "progress": 1.0001087214574838,
           "reason": "clear",
           "singleSupportPeak": 0
         },
@@ -539,9 +609,9 @@
           "fixture": "wheel-cart",
           "level": 4,
           "analyzed": true,
-          "cleared": false,
-          "progress": 0.9174469020418355,
-          "reason": "timeout",
+          "cleared": true,
+          "progress": 1.000211691270648,
+          "reason": "clear",
           "singleSupportPeak": 0
         },
         {
@@ -549,61 +619,106 @@
           "level": 5,
           "analyzed": true,
           "cleared": false,
-          "progress": 0.29277797192667876,
+          "progress": 0.292684814347833,
           "reason": "stuck",
-          "singleSupportPeak": 0.6000000000000002
+          "singleSupportPeak": 0
         },
         {
-          "fixture": "walker",
+          "fixture": "uneven-cart",
           "level": 1,
           "analyzed": true,
           "cleared": true,
-          "progress": 1.000492178324361,
+          "progress": 1.0007667195366319,
           "reason": "clear",
           "singleSupportPeak": 0
         },
         {
-          "fixture": "walker",
+          "fixture": "uneven-cart",
           "level": 2,
           "analyzed": true,
           "cleared": false,
-          "progress": 0.40502631268768075,
+          "progress": 0.4103459649915696,
           "reason": "stuck",
           "singleSupportPeak": 0
         },
         {
-          "fixture": "walker",
+          "fixture": "uneven-cart",
           "level": 3,
           "analyzed": true,
           "cleared": true,
-          "progress": 1.000002825042054,
+          "progress": 1.0000760288132344,
           "reason": "clear",
           "singleSupportPeak": 0
         },
         {
-          "fixture": "walker",
+          "fixture": "uneven-cart",
           "level": 4,
           "analyzed": true,
           "cleared": false,
-          "progress": 0.544954264317416,
+          "progress": 0.982539305977593,
           "reason": "timeout",
           "singleSupportPeak": 0
         },
         {
+          "fixture": "uneven-cart",
+          "level": 5,
+          "analyzed": true,
+          "cleared": false,
+          "progress": 0.29245957226626434,
+          "reason": "stuck",
+          "singleSupportPeak": 0
+        },
+        {
+          "fixture": "walker",
+          "level": 1,
+          "analyzed": true,
+          "cleared": true,
+          "progress": 1.000026817033518,
+          "reason": "clear",
+          "singleSupportPeak": 0
+        },
+        {
+          "fixture": "walker",
+          "level": 2,
+          "analyzed": true,
+          "cleared": false,
+          "progress": 0.5947350712407515,
+          "reason": "stuck",
+          "singleSupportPeak": 0.16666666666666666
+        },
+        {
+          "fixture": "walker",
+          "level": 3,
+          "analyzed": true,
+          "cleared": true,
+          "progress": 1.0002086055212982,
+          "reason": "clear",
+          "singleSupportPeak": 0
+        },
+        {
+          "fixture": "walker",
+          "level": 4,
+          "analyzed": true,
+          "cleared": false,
+          "progress": 0.35460744656985016,
+          "reason": "stuck",
+          "singleSupportPeak": 0
+        },
+        {
           "fixture": "walker",
           "level": 5,
           "analyzed": true,
           "cleared": false,
-          "progress": 0.2903871414121407,
+          "progress": 0.29308502103005646,
           "reason": "stuck",
-          "singleSupportPeak": 0
+          "singleSupportPeak": 0.06666666666666667
         },
         {
           "fixture": "trike",
           "level": 1,
           "analyzed": true,
           "cleared": true,
-          "progress": 1.0006137006791145,
+          "progress": 1.000517510613569,
           "reason": "clear",
           "singleSupportPeak": 0
         },
@@ -612,16 +727,16 @@
           "level": 2,
           "analyzed": true,
           "cleared": false,
-          "progress": 0.41043799553950616,
+          "progress": 0.5948557919582413,
           "reason": "stuck",
-          "singleSupportPeak": 0.016666666666666666
+          "singleSupportPeak": 0.08333333333333333
         },
         {
           "fixture": "trike",
           "level": 3,
           "analyzed": true,
           "cleared": true,
-          "progress": 1.000284368957414,
+          "progress": 1.0002823929003195,
           "reason": "clear",
           "singleSupportPeak": 0
         },
@@ -630,7 +745,7 @@
           "level": 4,
           "analyzed": true,
           "cleared": true,
-          "progress": 1.0001241546843447,
+          "progress": 1.000099723136701,
           "reason": "clear",
           "singleSupportPeak": 0
         },
@@ -639,7 +754,7 @@
           "level": 5,
           "analyzed": true,
           "cleared": false,
-          "progress": 0.29286652620903897,
+          "progress": 0.292808433349733,
           "reason": "stuck",
           "singleSupportPeak": 0
         },
@@ -648,7 +763,7 @@
           "level": 1,
           "analyzed": true,
           "cleared": true,
-          "progress": 1.0007725342376224,
+          "progress": 1.0010171081040444,
           "reason": "clear",
           "singleSupportPeak": 0
         },
@@ -657,7 +772,7 @@
           "level": 2,
           "analyzed": true,
           "cleared": false,
-          "progress": 0.41106599484087064,
+          "progress": 0.5943474679036594,
           "reason": "stuck",
           "singleSupportPeak": 0
         },
@@ -666,7 +781,7 @@
           "level": 3,
           "analyzed": true,
           "cleared": true,
-          "progress": 1.0003468889244578,
+          "progress": 1.000213639632929,
           "reason": "clear",
           "singleSupportPeak": 0
         },
@@ -675,8 +790,8 @@
           "level": 4,
           "analyzed": true,
           "cleared": false,
-          "progress": 0.5346065945210033,
-          "reason": "timeout",
+          "progress": 0.3428887643422668,
+          "reason": "stuck",
           "singleSupportPeak": 0
         },
         {
@@ -684,7 +799,7 @@
           "level": 5,
           "analyzed": true,
           "cleared": false,
-          "progress": 0.2912475932944531,
+          "progress": 0.2927142715675087,
           "reason": "stuck",
           "singleSupportPeak": 0
         },
@@ -692,53 +807,53 @@
           "fixture": "glider",
           "level": 1,
           "analyzed": true,
-          "cleared": true,
-          "progress": 1.0002816874565705,
-          "reason": "clear",
-          "singleSupportPeak": 0.18333333333333332
+          "cleared": false,
+          "progress": 0.08933330034762924,
+          "reason": "stuck",
+          "singleSupportPeak": 1.0833333333333357
         },
         {
           "fixture": "glider",
           "level": 2,
           "analyzed": true,
           "cleared": false,
-          "progress": 0.4104844357711886,
+          "progress": 0.07679529328129531,
           "reason": "stuck",
-          "singleSupportPeak": 6.099999999999984
+          "singleSupportPeak": 1.0833333333333357
         },
         {
           "fixture": "glider",
           "level": 3,
           "analyzed": true,
-          "cleared": true,
-          "progress": 1.0005905823689296,
-          "reason": "clear",
-          "singleSupportPeak": 0.18333333333333332
+          "cleared": false,
+          "progress": 0.06948145582593385,
+          "reason": "stuck",
+          "singleSupportPeak": 1.0833333333333357
         },
         {
           "fixture": "glider",
           "level": 4,
           "analyzed": true,
-          "cleared": true,
-          "progress": 1.0003096336203061,
-          "reason": "clear",
-          "singleSupportPeak": 0.4666666666666666
+          "cleared": false,
+          "progress": 0.06632320783384595,
+          "reason": "stuck",
+          "singleSupportPeak": 1.0833333333333357
         },
         {
           "fixture": "glider",
           "level": 5,
           "analyzed": true,
-          "cleared": true,
-          "progress": 1.0000369874185329,
-          "reason": "clear",
-          "singleSupportPeak": 1.8333333333333306
+          "cleared": false,
+          "progress": 0.0572200224448867,
+          "reason": "stuck",
+          "singleSupportPeak": 1.0833333333333357
         },
         {
           "fixture": "climber",
           "level": 1,
           "analyzed": true,
           "cleared": true,
-          "progress": 1.0001357712102865,
+          "progress": 1.0004703125411065,
           "reason": "clear",
           "singleSupportPeak": 0
         },
@@ -747,16 +862,16 @@
           "level": 2,
           "analyzed": true,
           "cleared": false,
-          "progress": 0.40905436211694074,
+          "progress": 0.4096401963505422,
           "reason": "stuck",
-          "singleSupportPeak": 0
+          "singleSupportPeak": 0.06666666666666667
         },
         {
           "fixture": "climber",
           "level": 3,
           "analyzed": true,
           "cleared": true,
-          "progress": 1.0005548070153663,
+          "progress": 1.0002887626704806,
           "reason": "clear",
           "singleSupportPeak": 0
         },
@@ -765,8 +880,8 @@
           "level": 4,
           "analyzed": true,
           "cleared": false,
-          "progress": 0.5023271759181007,
-          "reason": "timeout",
+          "progress": 0.33998672068539193,
+          "reason": "stuck",
           "singleSupportPeak": 0
         },
         {
@@ -774,123 +889,23 @@
           "level": 5,
           "analyzed": true,
           "cleared": false,
-          "progress": 0.2848404950951485,
+          "progress": 0.2913818589940288,
           "reason": "stuck",
-          "singleSupportPeak": 0
+          "singleSupportPeak": 0.06666666666666667
         }
       ]
     },
     "randomBatches": [
       {
         "seed": "rig-node-a",
-        "at": "2026-03-13T00:14:37.642Z",
-        "trials": 12,
-        "analyzed": 12,
+        "at": "2026-03-17T15:19:10.931Z",
+        "trials": 6,
+        "analyzed": 6,
         "cleared": 0,
         "clearRate": 0,
-        "avgProgress": 0.3310148990877026,
+        "avgProgress": 0.32111274377561033,
         "byReason": {
-          "stuck": 6,
-          "timeout": 6
-        },
-        "samples": [
-          {
-            "level": 2,
-            "analyzed": true,
-            "cleared": false,
-            "progress": 0.08306154870516215,
-            "reason": "stuck"
-          },
-          {
-            "level": 4,
-            "analyzed": true,
-            "cleared": false,
-            "progress": 0.11753063801307613,
-            "reason": "stuck"
-          },
-          {
-            "level": 5,
-            "analyzed": true,
-            "cleared": false,
-            "progress": 0.12493347964074612,
-            "reason": "stuck"
-          },
-          {
-            "level": 4,
-            "analyzed": true,
-            "cleared": false,
-            "progress": 0.5816388930158127,
-            "reason": "timeout"
-          },
-          {
-            "level": 5,
-            "analyzed": true,
-            "cleared": false,
-            "progress": 0.2926016807780222,
-            "reason": "stuck"
-          },
-          {
-            "level": 3,
-            "analyzed": true,
-            "cleared": false,
-            "progress": 0.6705491010322201,
-            "reason": "timeout"
-          },
-          {
-            "level": 4,
-            "analyzed": true,
-            "cleared": false,
-            "progress": 0.5604452381021642,
-            "reason": "timeout"
-          },
-          {
-            "level": 5,
-            "analyzed": true,
-            "cleared": false,
-            "progress": 0.2914276839170272,
-            "reason": "stuck"
-          },
-          {
-            "level": 1,
-            "analyzed": true,
-            "cleared": false,
-            "progress": 0.30672879464056824,
-            "reason": "timeout"
-          },
-          {
-            "level": 4,
-            "analyzed": true,
-            "cleared": false,
-            "progress": 0.5468902606641705,
-            "reason": "timeout"
-          },
-          {
-            "level": 5,
-            "analyzed": true,
-            "cleared": false,
-            "progress": 0.20182863440882023,
-            "reason": "stuck"
-          },
-          {
-            "level": 3,
-            "analyzed": true,
-            "cleared": false,
-            "progress": 0.1945428361346412,
-            "reason": "timeout"
-          }
-        ]
-      },
-      {
-        "seed": "rig-node-b",
-        "at": "2026-03-13T00:14:38.129Z",
-        "trials": 12,
-        "analyzed": 12,
-        "cleared": 1,
-        "clearRate": 0.08333333333333333,
-        "avgProgress": 0.352228018931625,
-        "byReason": {
-          "stuck": 8,
-          "clear": 1,
+          "stuck": 3,
           "timeout": 3
         },
         "samples": [
@@ -898,95 +913,54 @@
             "level": 2,
             "analyzed": true,
             "cleared": false,
-            "progress": 0.1732803315767278,
+            "progress": 0.08346973065745211,
             "reason": "stuck"
+          },
+          {
+            "level": 4,
+            "analyzed": true,
+            "cleared": false,
+            "progress": 0.18883132318157134,
+            "reason": "timeout"
           },
           {
             "level": 5,
             "analyzed": true,
             "cleared": false,
-            "progress": 0.2924827532639953,
+            "progress": 0.05870643977558594,
             "reason": "stuck"
-          },
-          {
-            "level": 1,
-            "analyzed": true,
-            "cleared": false,
-            "progress": 0.19821258101824127,
-            "reason": "stuck"
-          },
-          {
-            "level": 1,
-            "analyzed": true,
-            "cleared": true,
-            "progress": 1.0000928925220332,
-            "reason": "clear"
           },
           {
             "level": 4,
             "analyzed": true,
             "cleared": false,
-            "progress": 0.5554279238991852,
+            "progress": 0.5813192829034339,
             "reason": "timeout"
-          },
-          {
-            "level": 2,
-            "analyzed": true,
-            "cleared": false,
-            "progress": 0.40808509046714225,
-            "reason": "stuck"
-          },
-          {
-            "level": 2,
-            "analyzed": true,
-            "cleared": false,
-            "progress": 0.16828340922861754,
-            "reason": "stuck"
           },
           {
             "level": 5,
             "analyzed": true,
             "cleared": false,
-            "progress": 0.12118529119139472,
+            "progress": 0.29229224558782807,
             "reason": "stuck"
           },
           {
-            "level": 4,
+            "level": 3,
             "analyzed": true,
             "cleared": false,
-            "progress": 0.5964417023334803,
+            "progress": 0.7220574405477908,
             "reason": "timeout"
-          },
-          {
-            "level": 1,
-            "analyzed": true,
-            "cleared": false,
-            "progress": 0.22770603075731677,
-            "reason": "timeout"
-          },
-          {
-            "level": 1,
-            "analyzed": true,
-            "cleared": false,
-            "progress": 0.34463037095539395,
-            "reason": "stuck"
-          },
-          {
-            "level": 4,
-            "analyzed": true,
-            "cleared": false,
-            "progress": 0.14090784996597205,
-            "reason": "stuck"
           }
         ]
       }
     ],
-    "avgRandomClearRate": 0.041666666666666664,
-    "avgRandomProgress": 0.3416214590096638,
+    "avgRandomClearRate": 0,
+    "avgRandomProgress": 0.32111274377561033,
     "fixtureHealth": {
       "warmupFailures": [],
       "fullFailures": [
         "wheel-cart",
+        "uneven-cart",
         "walker",
         "trike",
         "crawler",

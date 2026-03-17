@@ -53,10 +53,10 @@ This file defines the intended flat-ground behavior for the preconfigured fixtur
 - Primary behavior:
   - the body should stay relatively level,
   - it may skim or lighten contact, but should not pitch wildly,
-  - it still needs to reach the end of level 1 consistently.
+  - fins and tail may stabilize or preserve momentum, but should not create thrust on flat ground.
 - Failure signs:
   - nose-up or nose-down oscillation,
-  - long stalls with little forward speed,
+  - unexplained forward acceleration without wheel, leg, or arm contact,
   - unstable landing behavior on flat terrain.
 
 ## Climber
@@ -74,12 +74,14 @@ This file defines the intended flat-ground behavior for the preconfigured fixtur
 
 The code audit currently checks:
 
-- level clear on warmup
+- required level clear on warmup for self-propelled fixtures
 - average grounded wheel count for wheeled rigs
 - average grounded leg count for legged rigs
 - share of frames with at least two grounded wheels / legs where relevant
 - average forward speed
 - max absolute body angle
 - peak single-support duration
+
+The glider is intentionally excluded from the "must clear warmup" subset because it is now treated as a non-self-propelled control rig on flat terrain. Its audit checks low angle, low speed, and low forward progress instead.
 
 These thresholds are intentionally strict on flat ground. If a preset fixture fails here, the solver should be improved rather than weakening the expectation.

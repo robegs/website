@@ -247,3 +247,54 @@ Implemented an automatic self-test runner to simulate many random drawings direc
   - all 6 fixture expectations passed,
   - warmup regression passed for every fixture,
   - full quality suite status returned `ok: true`.
+
+## Iteration 11 (2026-03-13): Obstacle-Aware Smoothing Pass
+
+- Used the Node-based fixture and quality outputs to identify the next weak spot:
+  - preset fixtures were stable on warmup,
+  - later levels still failed mostly by `stuck` and `timeout`,
+  - arbitrary/random rigs remained the weakest class.
+- Added challenge lookahead in the solver:
+  - step assist,
+  - gap assist,
+  - low-tunnel body lowering,
+  - rough-patch traction bias.
+- Added a conservative fallback support path for ambiguous hybrid rigs with no detected clean support.
+- Added a fast Node regression script:
+  - `tests/run-sketch-rig-quick.js`
+  - intended for fast iteration without the expensive full tuning cycle.
+- Validation result after the pass:
+  - fixture expectation suite still passes,
+  - warmup regression still passes,
+  - broad multi-level regression still needs another pass, especially for walker/crawler/climber progression beyond warmup.
+
+## Iteration 12 (2026-03-13): Realistic Contact-Driven Locomotion
+
+- Removed fake forward thrust from:
+  - `fin`,
+  - `tail`,
+  - generic attachment fallback,
+  - `glider` mode.
+- Changed wheel spin to be driven by actual ground travel (`dx / radius`) rather than the articulated attachment angle.
+- Added explicit arm latch-contract-release behavior:
+  - arms can grab a reachable point on the ground ahead of the body,
+  - contract for a short phase to pull the chassis forward,
+  - release and cool down before the next grab.
+- Tightened wheel-cart support:
+  - stronger ride-height correction,
+  - stronger axle-angle stabilization,
+  - lower body-angle clamp for wheeled rigs,
+  - improved grounded-wheel audit sampling.
+- Updated the fixture contract:
+  - wheeled and legged fixtures must still clear warmup,
+  - `glider` is now intentionally a non-self-propelled control fixture on flat terrain.
+- Internal validation run with local Node + jsdom:
+  - command: `.\tools\node-v22.22.0-win-x64\node.exe tests\run-sketch-rig-quick.js`
+  - result: fixture expectations pass and required warmup fixtures pass.
+- Full quality run:
+  - command: `.\tools\node-v22.22.0-win-x64\node.exe tests\run-sketch-rig-fixtures.js`
+  - result:
+    - `expectationsOk: true`
+    - `qualityOk: true`
+    - `warmupAllPassed: true`
+    - `regressionWarmupAllPassed: true`

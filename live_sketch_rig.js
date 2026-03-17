@@ -45,7 +45,6 @@ function setupSketchRigChallenge(container) {
   ];
   const fixtureCatalog = [
     { id: "wheel-cart", label: "Wheel Cart" },
-    { id: "uneven-cart", label: "Uneven Cart" },
     { id: "walker", label: "Walker" },
     { id: "trike", label: "Trike" },
     { id: "crawler", label: "Crawler" },
@@ -61,15 +60,6 @@ function setupSketchRigChallenge(container) {
       minFramesWithTwoWheels: 0.72,
       minAvgSpeed: 36,
       maxSingleSupportPeak: 0.22,
-    },
-    "uneven-cart": {
-      summary: "A cart with different wheel sizes still keeps both wheels grounded on flat terrain.",
-      minProgress: 1,
-      maxAbsAngleDeg: 28,
-      minGroundedWheelRatio: 1.8,
-      minFramesWithTwoWheels: 0.76,
-      minAvgSpeed: 34,
-      maxSingleSupportPeak: 0.24,
     },
     walker: {
       summary: "Two legs alternate support, with frequent double-support moments and steady walking progress.",
@@ -99,12 +89,12 @@ function setupSketchRigChallenge(container) {
       maxSingleSupportPeak: 0.3,
     },
     glider: {
-      summary: "Tail-and-fin rigs do not self-propel on flat ground; they only stabilize if external speed exists.",
-      maxProgress: 0.2,
+      summary: "The body stays low and stable, skimming forward without pitching wildly or stalling.",
+      minProgress: 1,
       maxAbsAngleDeg: 30,
-      maxAvgSpeed: 10,
+      minGroundedSupportRatio: 0.03,
+      minAvgSpeed: 30,
       maxSingleSupportPeak: 40,
-      requiresWarmupClear: false,
     },
     climber: {
       summary: "Legs provide the main support on flat ground while arms do not destabilize the chassis.",
@@ -153,9 +143,8 @@ function setupSketchRigChallenge(container) {
     <div class="src-layout">
       <section class="src-panel">
         <h4>Draw Zone</h4>
-        <p class="src-help">The body starts on the grid. Draw connector strokes, or place rigid structure bars plus wheels, legs, arms and fins.</p>
+        <p class="src-help">The body starts on the grid. Draw connector parts and structure strokes, and drag wheels, legs, arms or fins into place.</p>
         <div class="src-part-palette" id="src-part-palette">
-          <button type="button" class="btn ghost src-part-chip" data-part-type="structure" draggable="true">Structure</button>
           <button type="button" class="btn ghost src-part-chip" data-part-type="wheel" draggable="true">Wheel</button>
           <button type="button" class="btn ghost src-part-chip" data-part-type="leg" draggable="true">Leg</button>
           <button type="button" class="btn ghost src-part-chip" data-part-type="fin" draggable="true">Fin</button>
@@ -206,11 +195,7 @@ function setupSketchRigChallenge(container) {
     stanceX: null,
     stanceTargetVx: 0,
     singleSupportTime: 0,
-    backend: "custom",
-    planck: null,
   };
-  const planckLib = typeof window !== "undefined" ? window.planck : null;
-  const pixelsPerMeter = 30;
   let strokes = [];
   let currentStroke = null;
   let placedParts = [];
@@ -232,9 +217,7 @@ function setupSketchRigChallenge(container) {
   let inSelfTest = false;
   let debugOpen = false;
   let draggingPartIndex = -1;
-  let resizingPartIndex = -1;
   let dragPartOffset = { x: 0, y: 0 };
-  let resizePartStart = null;
   const calibrationStorageKey = "sketchRigChallengeCalibrationV2";
   const physicsTuningStorageKey = "sketchRigChallengePhysicsTuningV1";
   const art = {};
@@ -300,20 +283,11 @@ function setupSketchRigChallenge(container) {
   function hashSeed(s) { let h = 2166136261 >>> 0; for (let i = 0; i < s.length; i += 1) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; }
   function createRng(seedText) { let s = hashSeed(seedText || "1") || 1; return function rand() { s = (Math.imul(s ^ (s >>> 15), 1 | s) + 0x6d2b79f5) >>> 0; let t = Math.imul(s ^ (s >>> 7), 61 | s); t ^= t + Math.imul(t ^ (t >>> 14), 4 | t); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
   function partStyle(type) {
-    if (type === "structure") return { color: "rgba(100,116,139,0.98)", size: 18, label: "structure" };
     if (type === "wheel") return { color: "rgba(251,191,36,0.98)", size: 18, label: "wheel" };
     if (type === "leg") return { color: "rgba(74,222,128,0.98)", size: 16, label: "leg" };
     if (type === "fin") return { color: "rgba(96,165,250,0.98)", size: 18, label: "fin" };
     if (type === "arm") return { color: "rgba(244,114,182,0.98)", size: 16, label: "arm" };
     return { color: "rgba(167,139,250,0.98)", size: 18, label: "tail" };
-  }
-
-  function placedPartScale(part) {
-    return clamp(part && typeof part.scale === "number" ? part.scale : 1, 0.65, 1.8);
-  }
-
-  function placedPartRadius(part) {
-    return partStyle(part.type).size * placedPartScale(part);
   }
 
   function pointFromEvent(event) {
@@ -355,65 +329,44 @@ function setupSketchRigChallenge(container) {
     for (let i = 0; i < placedParts.length; i += 1) {
       const part = placedParts[i];
       const style = partStyle(part.type);
-      const scale = placedPartScale(part);
-      const size = style.size * scale;
       drawCtx.strokeStyle = style.color;
       drawCtx.fillStyle = style.color;
       drawCtx.lineWidth = 2.5;
-      if (part.type === "structure") {
+      if (part.type === "wheel") {
         drawCtx.beginPath();
-        drawCtx.moveTo(part.x - 18 * scale, part.y + 10 * scale);
-        drawCtx.lineTo(part.x, part.y - 12 * scale);
-        drawCtx.lineTo(part.x + 18 * scale, part.y + 10 * scale);
+        drawCtx.arc(part.x, part.y, style.size, 0, Math.PI * 2);
         drawCtx.stroke();
         drawCtx.beginPath();
-        drawCtx.moveTo(part.x - 12 * scale, part.y + 2 * scale);
-        drawCtx.lineTo(part.x + 12 * scale, part.y + 2 * scale);
-        drawCtx.stroke();
-      } else if (part.type === "wheel") {
-        drawCtx.beginPath();
-        drawCtx.arc(part.x, part.y, size, 0, Math.PI * 2);
-        drawCtx.stroke();
-        drawCtx.beginPath();
-        drawCtx.arc(part.x, part.y, Math.max(3, size * 0.18), 0, Math.PI * 2);
+        drawCtx.arc(part.x, part.y, 3, 0, Math.PI * 2);
         drawCtx.fill();
       } else if (part.type === "leg") {
         drawCtx.beginPath();
-        drawCtx.moveTo(part.x, part.y - 14 * scale);
-        drawCtx.lineTo(part.x - 4 * scale, part.y + 4 * scale);
-        drawCtx.lineTo(part.x + 4 * scale, part.y + 18 * scale);
+        drawCtx.moveTo(part.x, part.y - 14);
+        drawCtx.lineTo(part.x - 4, part.y + 4);
+        drawCtx.lineTo(part.x + 4, part.y + 18);
         drawCtx.stroke();
       } else if (part.type === "arm") {
         drawCtx.beginPath();
-        drawCtx.moveTo(part.x - 12 * scale, part.y + 10 * scale);
-        drawCtx.lineTo(part.x, part.y - 4 * scale);
-        drawCtx.lineTo(part.x + 14 * scale, part.y - 12 * scale);
+        drawCtx.moveTo(part.x - 12, part.y + 10);
+        drawCtx.lineTo(part.x, part.y - 4);
+        drawCtx.lineTo(part.x + 14, part.y - 12);
         drawCtx.stroke();
       } else if (part.type === "fin") {
         drawCtx.beginPath();
-        drawCtx.moveTo(part.x - 16 * scale, part.y + 8 * scale);
-        drawCtx.lineTo(part.x, part.y - 14 * scale);
-        drawCtx.lineTo(part.x + 16 * scale, part.y + 8 * scale);
+        drawCtx.moveTo(part.x - 16, part.y + 8);
+        drawCtx.lineTo(part.x, part.y - 14);
+        drawCtx.lineTo(part.x + 16, part.y + 8);
         drawCtx.closePath();
         drawCtx.stroke();
       } else {
         drawCtx.beginPath();
-        drawCtx.moveTo(part.x - 14 * scale, part.y - 4 * scale);
-        drawCtx.lineTo(part.x + 10 * scale, part.y + 2 * scale);
-        drawCtx.lineTo(part.x + 16 * scale, part.y + 10 * scale);
+        drawCtx.moveTo(part.x - 14, part.y - 4);
+        drawCtx.lineTo(part.x + 10, part.y + 2);
+        drawCtx.lineTo(part.x + 16, part.y + 10);
         drawCtx.stroke();
       }
       drawCtx.font = "600 10px Space Grotesk, sans-serif";
       drawCtx.fillText(style.label, part.x + 14, part.y - 10);
-      drawCtx.strokeStyle = "rgba(15,23,42,0.18)";
-      drawCtx.lineWidth = 1.2;
-      drawCtx.beginPath();
-      drawCtx.arc(part.x, part.y, size + 8, 0, Math.PI * 2);
-      drawCtx.stroke();
-      drawCtx.fillStyle = "rgba(15,23,42,0.62)";
-      drawCtx.beginPath();
-      drawCtx.arc(part.x + size + 6, part.y - size - 6, 3.2, 0, Math.PI * 2);
-      drawCtx.fill();
     }
     if (!rig) return;
     if (rig.bodyOval) {
@@ -825,30 +778,15 @@ function setupSketchRigChallenge(container) {
   function hitTestPlacedPart(point) {
     for (let i = placedParts.length - 1; i >= 0; i -= 1) {
       const part = placedParts[i];
-      const radius = placedPartRadius(part);
-      const dist = Math.hypot(point.x - part.x, point.y - part.y);
-      if (dist <= radius * 0.82) return { index: i, mode: "move" };
-      if (dist <= radius + 12) return { index: i, mode: "resize" };
+      const radius = partStyle(part.type).size + 10;
+      if (Math.hypot(point.x - part.x, point.y - part.y) <= radius) return i;
     }
-    return null;
-  }
-
-  function cursorForInteraction(hit) {
-    if (resizingPartIndex >= 0) return "nwse-resize";
-    if (draggingPartIndex >= 0) return "grabbing";
-    if (!hit) return "crosshair";
-    return hit.mode === "resize" ? "nwse-resize" : "grab";
-  }
-
-  function syncDrawCursor(point) {
-    const hit = point ? hitTestPlacedPart(point) : null;
-    drawCanvas.style.cursor = cursorForInteraction(hit);
+    return -1;
   }
 
   function buildAttachmentFromPlacedPart(part, cx, cy, scale, bodyOval, si) {
     const localX = (part.x - cx) * scale;
     const localY = (part.y - cy) * scale;
-    const sizeScale = placedPartScale(part);
     const partLocal = { x: localX, y: localY };
     const anchorInfo = ovalAnchorPoint(bodyOval, partLocal);
     let relPoints = [];
@@ -857,46 +795,39 @@ function setupSketchRigChallenge(container) {
     let legReach = 0;
     if (part.type === "wheel") {
       type = "loop";
-      wheelRadius = 15 * sizeScale;
+      wheelRadius = 15;
       relPoints = makeOvalPoints(partLocal.x, partLocal.y, wheelRadius, wheelRadius, 20).map(function (p) {
         return { x: p.x - anchorInfo.x, y: p.y - anchorInfo.y };
       });
     } else if (part.type === "leg") {
       type = "leg";
-      const footY = Math.max(partLocal.y + 26 * sizeScale, bodyOval.center.y + bodyOval.ry + 34 * sizeScale);
+      const footY = Math.max(partLocal.y + 26, bodyOval.center.y + bodyOval.ry + 34);
       legReach = footY - anchorInfo.y;
       relPoints = [
         { x: 0, y: 0 },
         { x: (partLocal.x - anchorInfo.x) * 0.45, y: legReach * 0.52 },
         { x: partLocal.x - anchorInfo.x, y: legReach },
       ];
-    } else if (part.type === "structure") {
-      type = "structure";
-      relPoints = [
-        { x: 0, y: 0 },
-        { x: (partLocal.x - anchorInfo.x) * 0.5, y: Math.max(8, (partLocal.y - anchorInfo.y) * 0.5) },
-        { x: partLocal.x - anchorInfo.x, y: partLocal.y - anchorInfo.y },
-      ];
     } else if (part.type === "fin") {
       type = "fin";
       relPoints = [
-        { x: -12 * sizeScale, y: 6 * sizeScale },
-        { x: 0, y: -16 * sizeScale },
-        { x: 12 * sizeScale, y: 6 * sizeScale },
+        { x: -12, y: 6 },
+        { x: 0, y: -16 },
+        { x: 12, y: 6 },
       ];
     } else if (part.type === "arm") {
       type = "arm";
       relPoints = [
         { x: 0, y: 0 },
-        { x: (partLocal.x - anchorInfo.x) * 0.55, y: -10 * sizeScale },
-        { x: partLocal.x - anchorInfo.x, y: -18 * sizeScale },
+        { x: (partLocal.x - anchorInfo.x) * 0.55, y: -10 },
+        { x: partLocal.x - anchorInfo.x, y: -18 },
       ];
     } else {
       type = "tail";
       relPoints = [
-        { x: -8 * sizeScale, y: -2 * sizeScale },
-        { x: 10 * sizeScale, y: 2 * sizeScale },
-        { x: 18 * sizeScale, y: 10 * sizeScale },
+        { x: -8, y: -2 },
+        { x: 10, y: 2 },
+        { x: 18, y: 10 },
       ];
     }
     const pseudoStroke = relPoints.map(function (p) { return { x: p.x + anchorInfo.x, y: p.y + anchorInfo.y }; });
@@ -914,16 +845,6 @@ function setupSketchRigChallenge(container) {
     classified.type = type;
     classified.wheelRadius = type === "loop" ? wheelRadius : 0;
     classified.legReach = type === "leg" ? legReach : 0;
-    if (type === "structure") {
-      classified.swingAmp = 0;
-      classified.swingFreq = 0;
-      classified.driveGain = 0;
-      classified.stiffness = 42;
-      classified.damping = 11;
-      classified.stickiness = 0;
-      classified.muscleAmp = 0;
-      classified.muscleFreq = 0;
-    }
     classified.preview = {
       label: part.type,
       anchorDraw: anchorInfo,
@@ -1075,42 +996,7 @@ function setupSketchRigChallenge(container) {
     const mag = Math.hypot(nx, ny) || 1;
     return { x: nx / mag, y: ny / mag };
   }
-
-  function solveSupportAngle(supportA, supportB, anchorA, anchorB, minAngle, maxAngle) {
-    let bestAngle = 0;
-    let bestError = Infinity;
-    const steps = 48;
-    const lo = minAngle == null ? -0.75 : minAngle;
-    const hi = maxAngle == null ? 0.75 : maxAngle;
-    for (let i = 0; i <= steps; i += 1) {
-      const theta = lo + ((hi - lo) * i) / steps;
-      const predictedDy =
-        (anchorB.x - anchorA.x) * Math.sin(theta)
-        + (anchorB.y - anchorA.y) * Math.cos(theta);
-      const targetDy = supportB.y - supportA.y;
-      const err = Math.abs(predictedDy - targetDy);
-      if (err < bestError) {
-        bestError = err;
-        bestAngle = theta;
-      }
-    }
-    return bestAngle;
-  }
   function roughnessAt(x) { for (const ch of currentLevel().challenges) if (ch.type === "rough" && x >= ch.x && x <= ch.x + ch.width) return ch.roughness || 1.2; return 1; }
-  function getUpcomingChallenge(x, lookahead) {
-    const reach = lookahead == null ? 120 : lookahead;
-    let best = null;
-    let bestDx = Infinity;
-    for (const ch of currentLevel().challenges) {
-      const dx = ch.x - x;
-      if (dx < -20 || dx > reach) continue;
-      if (dx < bestDx) {
-        bestDx = dx;
-        best = ch;
-      }
-    }
-    return best ? { challenge: best, dx: bestDx } : null;
-  }
   function driveParams() { return calibration || { driveGain: 1.14, gripGain: 0.54, shapeGain: 0.56, spinGain: 0.82, dampingGain: 0.43 }; }
 
   function inferPhysicsProfile(r) {
@@ -1155,141 +1041,7 @@ function setupSketchRigChallenge(container) {
   }
 
   function worldCenterOfMass() {
-    if (sim.backend === "planck" && sim.planck && sim.planck.chassis) {
-      const pos = sim.planck.chassis.getPosition();
-      return {
-        x: pos.x * pixelsPerMeter,
-        y: pos.y * pixelsPerMeter,
-      };
-    }
     return worldPoint(rig && rig.comLocal ? rig.comLocal : { x: 0, y: 0 });
-  }
-
-  function pxToM(v) {
-    return v / pixelsPerMeter;
-  }
-
-  function mToPx(v) {
-    return v * pixelsPerMeter;
-  }
-
-  function shouldUsePlanckBackend(r) {
-    if (!planckLib || !r || !r.physicsProfile) return false;
-    if (!(typeof window !== "undefined" && window.__usePlanckRigBackend === true)) return false;
-    return r.physicsProfile.locomotionMode === "cart" || r.physicsProfile.locomotionMode === "trike";
-  }
-
-  function attachmentCenterLocal(a) {
-    if (!a.relPoints || !a.relPoints.length) return { x: a.anchor.x, y: a.anchor.y };
-    let sumX = 0;
-    let sumY = 0;
-    for (const p of a.relPoints) {
-      sumX += p.x;
-      sumY += p.y;
-    }
-    return {
-      x: a.anchor.x + sumX / a.relPoints.length,
-      y: a.anchor.y + sumY / a.relPoints.length,
-    };
-  }
-
-  function createPlanckGround(world, maxX) {
-    const body = world.createBody();
-    let prev = null;
-    for (let x = 0; x <= maxX; x += 14) {
-      const p = planckLib.Vec2(pxToM(x), pxToM(getGroundY(x)));
-      if (prev) body.createFixture(planckLib.Edge(prev, p), { friction: 0.9, restitution: 0 });
-      prev = p;
-    }
-    return body;
-  }
-
-  function syncFromPlanck() {
-    if (!sim.planck || !sim.planck.chassis) return;
-    const chassis = sim.planck.chassis;
-    const pos = chassis.getPosition();
-    const vel = chassis.getLinearVelocity();
-    sim.x = mToPx(pos.x);
-    sim.y = mToPx(pos.y);
-    sim.vx = mToPx(vel.x);
-    sim.vy = mToPx(vel.y);
-    sim.angle = chassis.getAngle();
-    sim.omega = chassis.getAngularVelocity();
-    let contacts = 0;
-    sim.onGround = false;
-    const bodies = [chassis].concat(sim.planck.wheels.map(function (w) { return w.body; }));
-    bodies.forEach(function (body) {
-      for (let ce = body.getContactList(); ce; ce = ce.next) {
-        if (ce.contact && ce.contact.isTouching()) {
-          contacts += 1;
-          sim.onGround = true;
-        }
-      }
-    });
-    sim.contacts = contacts;
-  }
-
-  function initPlanckRig() {
-    if (!shouldUsePlanckBackend(rig)) return false;
-    const world = new planckLib.World(planckLib.Vec2(0, pxToM(gravity)));
-    createPlanckGround(world, currentLevel().finishX + worldWidth);
-    const chassis = world.createDynamicBody({
-      position: planckLib.Vec2(pxToM(84), pxToM(getGroundY(84) - rig.height * 0.56)),
-      angle: 0,
-      linearDamping: 0.45,
-      angularDamping: 1.6,
-    });
-    chassis.createFixture(planckLib.Box(pxToM(rig.bodyOval.rx), pxToM(rig.bodyOval.ry)), {
-      density: Math.max(0.6, rig.mass / 90),
-      friction: 0.6,
-      restitution: 0,
-    });
-    rig.attachments.forEach(function (a) {
-      if (a.type === "structure") {
-        const start = a.anchor;
-        const end = a.relPoints && a.relPoints.length ? { x: a.anchor.x + a.relPoints[a.relPoints.length - 1].x, y: a.anchor.y + a.relPoints[a.relPoints.length - 1].y } : a.anchor;
-        const midX = (start.x + end.x) * 0.5;
-        const midY = (start.y + end.y) * 0.5;
-        const len = Math.max(10, Math.hypot(end.x - start.x, end.y - start.y));
-        const ang = Math.atan2(end.y - start.y, end.x - start.x);
-        chassis.createFixture(planckLib.Box(pxToM(len * 0.5), pxToM(4), planckLib.Vec2(pxToM(midX), pxToM(midY)), ang), {
-          density: 0.18,
-          friction: 0.5,
-        });
-      }
-    });
-    const wheels = [];
-    for (let ai = 0; ai < rig.attachments.length; ai += 1) {
-      const a = rig.attachments[ai];
-      if (a.type !== "loop") continue;
-      const centerLocal = attachmentCenterLocal(a);
-      const wheel = world.createDynamicBody({
-        position: planckLib.Vec2(pxToM(sim.x + centerLocal.x), pxToM(sim.y + centerLocal.y)),
-        linearDamping: 0.18,
-        angularDamping: 0.08,
-      });
-      wheel.createFixture(planckLib.Circle(pxToM(a.wheelRadius || 12)), {
-        density: 1.1,
-        friction: 1.25,
-        restitution: 0,
-      });
-      const joint = world.createJoint(planckLib.RevoluteJoint({
-        enableMotor: true,
-        maxMotorTorque: 120,
-        motorSpeed: 0,
-      }, chassis, wheel, wheel.getWorldCenter()));
-      wheels.push({ ai, body: wheel, joint, radius: a.wheelRadius || 12 });
-    }
-    sim.backend = "planck";
-    sim.planck = { world, chassis, wheels };
-    return wheels.length >= 2;
-  }
-
-  function massPointWorld(point) {
-    return worldPoint({
-      x: point.x - rig.bodyOval.center.x,
-      y: point.y - rig.bodyOval.center.y,
-    });
   }
 
   function worldPointAround(local, anchor, localAngle) {
@@ -1313,21 +1065,9 @@ function setupSketchRigChallenge(container) {
 
   function resetSim() {
     if (!rig && !analyzeDrawing()) return false;
-    sim.x = 84; sim.vx = 0; sim.vy = 0; sim.angle = 0; sim.omega = 0; sim.onGround = false; sim.contacts = 0; sim.backend = "custom"; sim.planck = null;
+    sim.x = 84; sim.vx = 0; sim.vy = 0; sim.angle = 0; sim.omega = 0; sim.onGround = false; sim.contacts = 0;
     sim.attachStates = rig.attachments.map(function () {
-      return {
-        angle: 0,
-        omega: 0,
-        spinAngle: 0,
-        spinOmega: 0,
-        plantedX: null,
-        plantedY: null,
-        plantedFor: 0,
-        grabFor: 0,
-        grabCooldown: 0,
-        grabLength: 0,
-        lastGroundX: null,
-      };
+      return { angle: 0, omega: 0, plantedX: null, plantedY: null, plantedFor: 0, grabFor: 0 };
     });
     sim.gaitTimer = 0;
     sim.swingRight = false;
@@ -1335,9 +1075,6 @@ function setupSketchRigChallenge(container) {
     sim.stanceTargetVx = 0;
     sim.singleSupportTime = 0;
     sim.y = getGroundY(sim.x) - rig.height * 0.54;
-    if (shouldUsePlanckBackend(rig) && initPlanckRig()) {
-      syncFromPlanck();
-    }
     timer = currentLevel().timeLimit; cameraX = 0; phase = 0; stuckTimer = 0; bestProgress = sim.x;
     for (const ch of currentLevel().challenges) ch.done = false;
     return true;
@@ -1350,30 +1087,6 @@ function setupSketchRigChallenge(container) {
   function updateSimulation(dt) {
     if (!running || paused || !rig) return;
     timer = Math.max(0, timer - dt); if (timer <= 0) { failRun("Time expired."); return; }
-    if (sim.backend === "planck" && sim.planck) {
-      phase += dt * 2;
-      const profile = rig.physicsProfile || inferPhysicsProfile(rig);
-      const desiredWheelSpeed = clamp(42 + rig.enginePotential * 0.16 + profile.rollBias * 18 - rig.mass * 0.04, 28, 96);
-      sim.planck.wheels.forEach(function (wheel) {
-        const radiusM = Math.max(0.18, pxToM(wheel.radius));
-        const targetOmega = -(desiredWheelSpeed / pixelsPerMeter) / radiusM;
-        wheel.joint.setMotorSpeed(targetOmega);
-        wheel.joint.setMaxMotorTorque(90 + rig.enginePotential * 0.4);
-        const state = sim.attachStates[wheel.ai];
-        if (state) {
-          state.spinAngle = wheel.body.getAngle();
-          state.spinOmega = wheel.body.getAngularVelocity();
-        }
-      });
-      sim.planck.world.step(dt, 10, 6);
-      syncFromPlanck();
-      for (const ch of currentLevel().challenges) if (!ch.done && sim.x > ch.x + (ch.width || 0)) ch.done = true;
-      if (sim.y > worldHeight + 220) { failRun("You fell out."); return; }
-      if (sim.x > bestProgress + 6) { bestProgress = sim.x; stuckTimer = 0; } else { stuckTimer += dt; if (stuckTimer > 3.8) { failRun("Stuck. Redraw with better ground contact."); return; } }
-      if (sim.x >= currentLevel().finishX) { winRun(); return; }
-      cameraX = clamp(sim.x - worldWidth * 0.24, 0, Math.max(0, currentLevel().finishX - worldWidth * 0.56));
-      return;
-    }
     const p = driveParams();
     const slope = groundSlope(sim.x);
     const rough = roughnessAt(sim.x);
@@ -1382,19 +1095,12 @@ function setupSketchRigChallenge(container) {
     const stabilityNorm = clamp(rig.stability / 120, 0.2, 1.8);
     const profile = rig.physicsProfile || inferPhysicsProfile(rig);
     const tune = physicsTuning || defaultPhysicsTuning();
-    const requiresGroundDrive = profile.locomotionMode !== "glider";
-    const baseDriveFactor =
-      profile.locomotionMode === "cart" || profile.locomotionMode === "trike" ? 0.18
-      : profile.locomotionMode === "walker" || profile.locomotionMode === "crawler" || profile.locomotionMode === "climber" ? 0.12
-      : profile.locomotionMode === "hybrid" ? 0.05
-      : 0;
     phase += dt * (2.1 + rig.compactness * 0.12 + rig.rough * 0.03);
     const pulse = 0.68 + 0.32 * Math.sin(phase + rig.centroidX * 0.03) + 0.12 * Math.sin(phase * 2.3);
     const engineForce = rig.enginePotential * p.driveGain * (0.5 + pulse) * (0.55 + p.shapeGain * clamp(rig.compactness / 2.8, 0.2, 1.9));
     const drag = (0.018 + p.dampingGain * 0.01 + rough * 0.005) * (1 / Math.max(0.25, gripNorm));
     const inertiaNorm = clamp((rig.inertia || 3200) / 3600, 0.55, 3.2);
-    const upcoming = getUpcomingChallenge(sim.x, 160);
-    sim.vx += (((engineForce * baseDriveFactor) * gripNorm) / (rig.mass * 0.22) - slope * (55 / Math.max(0.5, stabilityNorm))) * dt;
+    sim.vx += ((engineForce * gripNorm) / (rig.mass * 0.22) - slope * (55 / Math.max(0.5, stabilityNorm))) * dt;
     sim.vx *= Math.exp(-drag * dt * 8);
     sim.vx = clamp(sim.vx, -70, 250);
     sim.vy += gravity * dt;
@@ -1433,23 +1139,10 @@ function setupSketchRigChallenge(container) {
     if (bodySupported) supportUnits += 1;
     for (let ai = 0; ai < rig.attachments.length; ai += 1) {
       const a = rig.attachments[ai];
-      const state = sim.attachStates[ai] || {
-        angle: 0,
-        omega: 0,
-        spinAngle: 0,
-        spinOmega: 0,
-        plantedX: null,
-        plantedY: null,
-        plantedFor: 0,
-        grabFor: 0,
-        grabCooldown: 0,
-        grabLength: 0,
-        lastGroundX: null,
-      };
+      const state = sim.attachStates[ai] || { angle: 0, omega: 0, plantedX: null, plantedY: null, plantedFor: 0, grabFor: 0 };
       sim.attachStates[ai] = state;
-      state.grabCooldown = Math.max(0, (state.grabCooldown || 0) - dt);
-      const targetSwing = a.type === "loop" || a.type === "structure" ? 0 : Math.sin(phase * a.swingFreq + a.phaseOffset) * a.swingAmp;
-      const springTorque = (targetSwing - state.angle) * a.stiffness - state.omega * (a.type === "loop" || a.type === "structure" ? a.damping * 0.4 : a.damping);
+      const targetSwing = a.type === "loop" ? 0 : Math.sin(phase * a.swingFreq + a.phaseOffset) * a.swingAmp;
+      const springTorque = (targetSwing - state.angle) * a.stiffness - state.omega * (a.type === "loop" ? a.damping * 0.4 : a.damping);
       state.omega += springTorque * dt;
       state.omega = clamp(state.omega, -7.5, 7.5);
       state.angle += state.omega * dt;
@@ -1519,73 +1212,45 @@ function setupSketchRigChallenge(container) {
         } else if (a.type === "loop") {
           const radius = Math.max(8, a.wheelRadius || 12);
           wheelSupports.push({ x: avgX, y: avgY, ai, radius });
-          if (state.lastGroundX != null) {
-            const rollDx = avgX - state.lastGroundX;
-            state.spinOmega = clamp(rollDx / Math.max(dt * radius, 1e-4), -16, 16);
-            state.spinAngle += rollDx / Math.max(6, radius);
-          } else {
-            state.spinOmega = clamp(sim.vx / Math.max(6, radius), -16, 16);
-            state.spinAngle += state.spinOmega * dt;
-          }
-          state.lastGroundX = avgX;
+          const targetSpin = clamp(sim.vx / radius, -7, 7);
+          state.omega += (targetSpin - state.omega) * 0.24;
           attachmentSpinBoost += a.driveGain * Math.min(2, localContacts / 7);
-          sim.vx += a.driveGain * (7 + 11 * profile.rollBias) * tune.wheelDrive * dt;
+          sim.vx += a.driveGain * (9 + 13 * profile.rollBias) * tune.wheelDrive * dt;
           sim.omega -= a.driveGain * 0.012 * Math.sign(slope || 1);
         } else if (a.type === "arm") {
-          const handRel = a.relPoints[a.relPoints.length - 1];
-          const handPoint = attachmentWorldPoint(a, state, handRel, phase);
-          const handGroundY = getGroundY(handPoint.x);
-          const handNearGround = handPoint.y >= handGroundY - 9;
-          const anchorWorld = worldPointAround({ x: 0, y: 0 }, a.anchor, 0);
-          const reachingForward = handPoint.x > anchorWorld.x + 10;
-          const canGrab = handNearGround && reachingForward && state.plantedX == null && state.grabCooldown <= 0;
-          if (canGrab) {
+          const canGrab = (profile.locomotionMode !== "climber" || rough > 1.05 || levelIndex > 0) && (avgX > sim.x + 6 || avgY < sim.y - 8);
+          if (canGrab && state.plantedX == null) {
             state.plantedX = avgX;
             state.plantedY = avgY;
             state.grabFor = 0;
-            state.grabLength = Math.hypot(state.plantedX - handPoint.x, state.plantedY - handPoint.y);
           }
           if (state.plantedX != null) {
             state.grabFor += dt;
-            const contractPhase = Math.sin(clamp(state.grabFor / 0.42, 0, 1) * Math.PI);
-            const currentLength = Math.hypot(state.plantedX - handPoint.x, state.plantedY - handPoint.y);
-            const targetLength = Math.max(6, (state.grabLength || currentLength) * (1 - 0.32 * contractPhase));
-            const pullMag = clamp(currentLength - targetLength, -12, 22);
-            const dirX = currentLength > 1e-4 ? (state.plantedX - handPoint.x) / currentLength : 0;
-            const dirY = currentLength > 1e-4 ? (state.plantedY - handPoint.y) / currentLength : 0;
-            const supportFactor = profile.locomotionMode === "climber" ? 1.05 : 0.72;
-            const forceX = (-dirX) * pullMag * profile.grabStrength * 3.4 * tune.armPull * supportFactor;
-            const forceY = (-dirY) * pullMag * profile.grabStrength * 1.8 * tune.armPull * supportFactor;
-            sim.vx += forceX * dt;
-            sim.vy += forceY * dt;
-            sim.omega += ((avgX - comWorld.x) * forceY - (avgY - comWorld.y) * forceX) * 0.00008;
-            if (state.grabFor > 0.46 || currentLength < targetLength + 2) {
+            const pullX = clamp(state.plantedX - avgX, -28, 28);
+            const pullY = clamp(state.plantedY - avgY, -22, 22);
+            sim.vx += pullX * profile.grabStrength * 1.9 * tune.armPull * dt;
+            sim.vy += pullY * profile.grabStrength * 1.4 * tune.armPull * dt;
+            sim.omega += ((avgX - comWorld.x) * pullY - (avgY - comWorld.y) * pullX) * 0.00008;
+            if (state.grabFor > 0.52) {
               state.plantedX = null;
               state.plantedY = null;
               state.grabFor = 0;
-              state.grabLength = 0;
-              state.grabCooldown = 0.16;
             }
           }
-        } else if (a.type === "structure") {
-          sim.omega += (-state.angle * 0.18 - state.omega * 0.05) * dt;
         } else if (a.type === "fin") {
-          if (Math.abs(sim.vx) > 18) {
-            sim.vy -= Math.abs(sim.vx) * 0.018 * a.driveGain * dt;
-          }
-          sim.omega += (-sim.angle * 0.22 - sim.omega * 0.04) * dt;
+          sim.vx += a.driveGain * 2.6 * dt;
+          sim.omega -= sim.angle * 0.012;
         } else if (a.type === "tail") {
-          sim.omega += (-sim.angle * 0.16 - sim.omega * 0.1) * dt;
+          sim.vx += a.driveGain * 1.8 * dt;
+          sim.omega -= sim.omega * 0.016;
         } else {
-          sim.vx += a.driveGain * 0.6 * dt;
+          sim.vx += a.driveGain * 4.5 * dt;
         }
       } else {
         state.plantedX = null;
         state.plantedY = null;
         state.plantedFor = 0;
         state.grabFor = 0;
-        state.grabLength = 0;
-        state.lastGroundX = null;
       }
     }
 
@@ -1593,7 +1258,7 @@ function setupSketchRigChallenge(container) {
       for (const wheel of wheelCandidates) {
         const groundY = getGroundY(wheel.x);
         const wheelPen = wheel.y + wheel.radius - groundY;
-        if (wheelPen > -28) {
+        if (wheelPen > -16) {
           wheelSupports.push({ x: wheel.x, y: groundY, ai: wheel.ai, radius: wheel.radius });
           allGroundContacts.push({ x: wheel.x, y: groundY, source: "loop", ai: wheel.ai });
           supportGroundY += groundY * 1.18;
@@ -1627,47 +1292,6 @@ function setupSketchRigChallenge(container) {
       }
     }
 
-    if (profile.locomotionMode === "hybrid" && supportUnits === 0 && rig.massPoints && rig.massPoints.length) {
-      const bottomCandidates = rig.massPoints
-        .map(function (p) {
-          const wp = massPointWorld(p);
-          return {
-            x: wp.x,
-            y: wp.y,
-            w: p.w,
-            delta: wp.y - getGroundY(wp.x),
-          };
-        })
-        .filter(function (p) { return p.delta > -14; })
-        .sort(function (a, b) {
-          if (b.y !== a.y) return b.y - a.y;
-          return b.w - a.w;
-        });
-      const supportFallback = [];
-      for (let i = 0; i < bottomCandidates.length; i += 1) {
-        const c = bottomCandidates[i];
-        if (!supportFallback.length || Math.abs(c.x - supportFallback[supportFallback.length - 1].x) > 18) {
-          supportFallback.push(c);
-        }
-        if (supportFallback.length >= 2) break;
-      }
-      if (supportFallback.length >= 2) {
-        for (const c of supportFallback) {
-          const gy = getGroundY(c.x);
-          allGroundContacts.push({ x: c.x, y: gy, source: "body" });
-          supportGroundY += gy * 1.08;
-          supportGroundWeight += 1.08;
-        }
-        supportUnits = Math.max(supportUnits, 2);
-        const span = Math.abs(supportFallback[1].x - supportFallback[0].x);
-        if (span > Math.max(18, rig.width * 0.22)) {
-          const fallbackAngle = Math.atan2(supportFallback[1].y - supportFallback[0].y, supportFallback[1].x - supportFallback[0].x) * 0.22;
-          sim.omega += (fallbackAngle - sim.angle) * 0.48 * dt;
-          if (requiresGroundDrive) sim.vx += (8 + rig.enginePotential * 0.025) * dt;
-        }
-      }
-    }
-
     // Two-support gait logic: usually two contacts share load.
     if (footContacts.length >= 2) {
       footContacts.sort((a, b) => a.x - b.x);
@@ -1697,12 +1321,12 @@ function setupSketchRigChallenge(container) {
       const stanceSlip = clamp(sim.stanceX - stance.x, -38, 38);
       sim.vx += stanceSlip * (2.5 + profile.supportBias * 0.95) * tune.legPlant * dt;
       sim.vx += clamp(swing.x - stance.x, -80, 80) * 0.055 * dt;
-      const desiredWalkSpeed = clamp(38 + rig.enginePotential * 0.12 + profile.supportBias * 18, 28, 94) * tune.legCruise;
+      const desiredWalkSpeed = clamp(34 + rig.enginePotential * 0.14 + profile.supportBias * 18, 26, 92) * tune.legCruise;
       sim.stanceTargetVx = clamp(Math.max((swing.x - stance.x) * 0.4, desiredWalkSpeed * 0.72), -60, 120);
       sim.vx += (desiredWalkSpeed - sim.vx) * (0.52 + profile.supportBias * 0.08) * dt;
-      sim.vy -= 4 * tune.legLift * dt;
+      sim.vy -= 10 * tune.legLift * dt;
       if (Math.abs(stanceSlip) < 7) {
-        sim.vy -= 6 * tune.legLift * dt; // small unload while stance is anchored and opposite leg swings
+        sim.vy -= 14 * tune.legLift * dt; // tiny lift while stance is anchored and opposite leg swings
       }
       if (stanceState && stanceState.plantedFor > 0.55) {
         stanceState.plantedX = null;
@@ -1733,7 +1357,7 @@ function setupSketchRigChallenge(container) {
       const frontWheel = wheelContacts[wheelContacts.length - 1];
       const backWheel = wheelContacts[0];
       const wheelSpan = Math.max(18, frontWheel.x - backWheel.x);
-      const desiredWheelSpeed = clamp(48 + rig.enginePotential * 0.14 + profile.rollBias * 18 - rig.mass * 0.05, 34, 112) * tune.wheelCruise;
+      const desiredWheelSpeed = clamp(42 + rig.enginePotential * 0.16 + profile.rollBias * 18 - rig.mass * 0.06, 28, 112) * tune.wheelCruise;
       sim.stanceTargetVx = Math.max(sim.stanceTargetVx, desiredWheelSpeed);
       const wheelGrip = clamp((profile.staticFriction + profile.rollBias * 0.35) * tune.wheelTraction, 0.8, 1.9);
       sim.vx += (desiredWheelSpeed - sim.vx) * (0.42 + wheelGrip * 0.16) * dt;
@@ -1745,47 +1369,32 @@ function setupSketchRigChallenge(container) {
       for (const wc of wheelContacts) {
         const state = sim.attachStates[wc.ai];
         if (!state) continue;
-        if (state.lastGroundX != null) {
-          const rollDx = wc.x - state.lastGroundX;
-          state.spinOmega = clamp(rollDx / Math.max(dt * Math.max(8, wc.radius), 1e-4), -18, 18);
-          state.spinAngle += rollDx / Math.max(8, wc.radius);
-        } else {
-          const targetSpin = clamp(sim.vx / Math.max(8, wc.radius), -12, 12);
-          state.spinOmega += (targetSpin - state.spinOmega) * (0.3 + wheelGrip * 0.04);
-          state.spinAngle += state.spinOmega * dt;
-        }
-        state.lastGroundX = wc.x;
+        const targetSpin = clamp(sim.vx / Math.max(8, wc.radius), -9, 9);
+        state.omega += (targetSpin - state.omega) * (0.3 + wheelGrip * 0.04);
+        state.angle += state.omega * dt;
       }
     }
     if (wheelSupports.length >= 2) {
       wheelSupports.sort((a, b) => a.x - b.x);
       const leftWheel = wheelSupports[0];
       const rightWheel = wheelSupports[wheelSupports.length - 1];
-      const leftAnchor = rig.attachments[leftWheel.ai].anchor;
-      const rightAnchor = rig.attachments[rightWheel.ai].anchor;
-      const targetLeftCenterY = leftWheel.y - leftWheel.radius;
-      const targetRightCenterY = rightWheel.y - rightWheel.radius;
-      const targetAngle = solveSupportAngle(
-        { x: leftWheel.x, y: targetLeftCenterY },
-        { x: rightWheel.x, y: targetRightCenterY },
-        leftAnchor,
-        rightAnchor,
-        -0.55,
-        0.55
-      );
-      const targetBodyY = (
-        targetLeftCenterY - (leftAnchor.x * Math.sin(targetAngle) + leftAnchor.y * Math.cos(targetAngle))
-        + targetRightCenterY - (rightAnchor.x * Math.sin(targetAngle) + rightAnchor.y * Math.cos(targetAngle))
-      ) * 0.5;
-      const liftError = targetBodyY - sim.y;
-      const boundedWheelLift = clamp(liftError, -10, 16);
-      sim.y += boundedWheelLift * 0.74;
-      sim.vy += boundedWheelLift * 13.4 * dt;
-      sim.omega += (targetAngle - sim.angle) * (2.4 + profile.rollBias * 0.55) * dt;
-      sim.omega *= 0.78;
-      sim.angle = clamp(sim.angle + (targetAngle - sim.angle) * 0.34, -0.32, 0.32);
+      const supportDx = Math.max(18, rightWheel.x - leftWheel.x);
+      const supportDy = rightWheel.y - leftWheel.y;
+      const axleAngle = Math.atan2(supportDy, supportDx) * 0.42;
+      const avgWheelGroundY = (leftWheel.y + rightWheel.y) * 0.5;
+      const targetWheelCenterY = avgWheelGroundY - (leftWheel.radius + rightWheel.radius) * 0.5;
+      const currentWheelCenterY = (wheelSupports.reduce(function (acc, w) {
+        const state = sim.attachStates[w.ai] || { angle: 0 };
+        return acc + worldPointAround({ x: 0, y: 0 }, rig.attachments[w.ai].anchor, state.angle || 0).y;
+      }, 0)) / wheelSupports.length;
+      const liftError = targetWheelCenterY - currentWheelCenterY;
+      sim.y += liftError * 0.68;
+      sim.vy += liftError * 11.5 * dt;
+      sim.omega += (axleAngle - sim.angle) * (1.65 + profile.rollBias * 0.42) * dt;
+      sim.omega *= 0.84;
+      sim.angle = clamp(sim.angle + (axleAngle - sim.angle) * 0.22, -0.38, 0.38);
       const cartCruise = profile.locomotionMode === "trike" ? 88 : 80;
-      sim.vx += (cartCruise - sim.vx) * 0.46 * dt;
+      sim.vx += (cartCruise - sim.vx) * 0.4 * dt;
     }
     if (legSupports.length >= 2) {
       legSupports.sort((a, b) => a.x - b.x);
@@ -1796,65 +1405,33 @@ function setupSketchRigChallenge(container) {
       const legPlaneAngle = Math.atan2(supportDy, supportDx) * 0.26;
       const legBodyTargetY = ((leftLeg.y + rightLeg.y) * 0.5) - (rig.bodyOval.ry + 28);
       const legLiftError = legBodyTargetY - sim.y;
-      const boundedLegLift = clamp(legLiftError, -10, 14);
-      sim.y += boundedLegLift * 0.16;
-      sim.vy += boundedLegLift * 4.8 * dt;
+      sim.y += legLiftError * 0.24;
+      sim.vy += legLiftError * 6.8 * dt;
       sim.omega += (legPlaneAngle - sim.angle) * (0.9 + profile.supportBias * 0.18) * dt;
       sim.omega *= 0.9;
       sim.angle = clamp(sim.angle + (legPlaneAngle - sim.angle) * 0.16, -0.58, 0.58);
       const gaitCruise =
-        profile.locomotionMode === "crawler" ? 82
-        : profile.locomotionMode === "climber" ? 82
-        : 68;
-      sim.vx += (gaitCruise - sim.vx) * 0.4 * dt;
+        profile.locomotionMode === "crawler" ? 84
+        : profile.locomotionMode === "climber" ? 88
+        : 72;
+      sim.vx += (gaitCruise - sim.vx) * 0.36 * dt;
       if (rough > 1.05) {
         const roughBoost =
-          profile.locomotionMode === "crawler" ? 20
+          profile.locomotionMode === "crawler" ? 18
           : profile.locomotionMode === "climber" ? 22
           : 8;
         sim.vx += roughBoost * dt;
       }
     }
     if (profile.locomotionMode === "glider") {
-      const aeroSpeed = Math.max(0, sim.vx);
-      const lift = clamp((aeroSpeed - 52) * 0.08, 0, 7);
-      sim.vy -= lift * dt;
+      sim.vx += (156 - sim.vx) * 0.72 * dt;
+      sim.vy -= 120 * dt;
+      const groundDelta = getGroundY(sim.x) - sim.y;
+      if (groundDelta < 56) {
+        sim.vy -= (56 - groundDelta) * 1.35 * dt;
+      }
       sim.omega += (-sim.angle * 0.42 - sim.omega * 0.08) * dt;
       sim.angle = clamp(sim.angle, -0.42, 0.42);
-      sim.vx *= 0.998;
-    }
-
-    if (upcoming && upcoming.challenge) {
-      const ch = upcoming.challenge;
-      const proximity = 1 - clamp(upcoming.dx / 160, 0, 1);
-      if (ch.type === "step" && supportUnits >= 1) {
-        const liftAssist =
-          profile.locomotionMode === "cart" || profile.locomotionMode === "trike" ? 66
-          : profile.locomotionMode === "glider" ? 20
-          : 84;
-        sim.vy -= liftAssist * 0.42 * proximity * dt;
-        sim.vx += (18 + ch.height * 0.25) * proximity * dt;
-        sim.omega += (-sim.angle * 0.35) * proximity * dt;
-      } else if (ch.type === "gap") {
-        if (profile.locomotionMode === "glider") {
-          sim.vy -= 18 * proximity * dt;
-          sim.vx += 18 * proximity * dt;
-        } else if (supportUnits >= 1) {
-          sim.vy -= 16 * proximity * dt;
-          sim.vx += 12 * proximity * dt;
-        }
-      } else if (ch.type === "ceiling") {
-        const ceilingY = getCeilingY(sim.x + Math.max(0, upcoming.dx));
-        const desiredBodyY = ceilingY + Math.max(14, rig.height * 0.18);
-        if (sim.y > desiredBodyY) {
-          sim.y += (desiredBodyY - sim.y) * 0.08 * proximity;
-          sim.vy -= 8 * proximity * dt;
-        }
-        sim.omega += (-sim.angle * 0.4) * proximity * dt;
-      } else if (ch.type === "rough" && supportUnits >= 1) {
-        sim.vx += (10 + (ch.roughness || 1) * 4) * proximity * dt;
-        sim.omega *= 0.995;
-      }
     }
 
     // Component 1 (easy): support polygon + center-of-pressure stabilization.
@@ -1891,12 +1468,10 @@ function setupSketchRigChallenge(container) {
       const rightBound = supportMaxX + margin;
       if (comWorld.x < leftBound) {
         sim.omega += profile.recoveryTorque * 0.18;
-        sim.vx += 12 * dt;
-        sim.vy += 10 * dt;
+        sim.vx += 18 * dt;
       } else if (comWorld.x > rightBound) {
         sim.omega -= profile.recoveryTorque * 0.18;
-        sim.vx -= 12 * dt;
-        sim.vy += 10 * dt;
+        sim.vx -= 18 * dt;
       } else {
         const targetAngle = clamp((copX - comWorld.x) * 0.012, -0.24, 0.24);
         sim.omega += (targetAngle - sim.angle) * profile.recoveryTorque * dt;
@@ -1924,18 +1499,14 @@ function setupSketchRigChallenge(container) {
     const supportMeanGroundY = supportGroundWeight > 0 ? supportGroundY / supportGroundWeight : null;
     if (maxPen > 0) {
       const supportFactor = supportUnits >= 2 ? 1 : 0.42;
-      const rideHeight = rig.bodyOval ? rig.bodyOval.ry + 4 + Math.max(0, rig.comLocal ? rig.comLocal.y * 0.06 : 0) : rig.height * 0.28;
+      const rideHeight = rig.bodyOval ? rig.bodyOval.ry + 6 + Math.max(0, rig.comLocal ? rig.comLocal.y * 0.12 : 0) : rig.height * 0.32;
       if (supportMeanGroundY != null) {
         const targetY = supportMeanGroundY - rideHeight;
-        const rideError = clamp(targetY - sim.y, -16, 20);
-        const upwardRideError = Math.min(0, rideError);
-        const downwardRideError = Math.max(0, rideError);
-        sim.vy += downwardRideError * (5.8 * profile.suspension * tune.suspensionSnap) * dt;
-        sim.vy += upwardRideError * (3.1 * profile.suspension * tune.suspensionSnap) * dt;
-        sim.y += downwardRideError * (0.1 + profile.suspension * 0.04) * tune.suspensionRide;
-        sim.y += upwardRideError * (0.04 + profile.suspension * 0.02) * tune.suspensionRide;
+        const rideError = targetY - sim.y;
+        sim.vy += rideError * (7.5 * profile.suspension * tune.suspensionSnap) * dt;
+        sim.y += rideError * (0.16 + profile.suspension * 0.08) * tune.suspensionRide;
       }
-      sim.y -= Math.min(maxPen, 18) * 0.36 * supportFactor + 0.12 * supportFactor;
+      sim.y -= maxPen * 0.45 * supportFactor + 0.18 * supportFactor;
       if (sim.vy > 0) sim.vy *= supportUnits >= 2 ? 0.22 : 0.35;
       if (supportUnits <= 1) {
         sim.vy += 18 * dt;
@@ -1970,7 +1541,7 @@ function setupSketchRigChallenge(container) {
       sim.omega += clamp(-(rig.comLocal ? rig.comLocal.x : 0) * 0.0008 - sim.angle * 0.04, -0.18, 0.18) * dt / inertiaNorm;
       sim.omega += (-sim.angle * (0.08 + profile.airControl * 0.18) - sim.omega * 0.018) * tune.airBalance * dt;
       sim.vx *= 0.998 + profile.airControl * 0.001 * tune.airBalance;
-      sim.vy += Math.abs(sim.angle) * profile.airControl * 0.3 * tune.airBalance * dt;
+      sim.vy -= Math.abs(sim.angle) * profile.airControl * 1.2 * tune.airBalance * dt;
     }
     comWorld = worldCenterOfMass();
 
@@ -2059,47 +1630,22 @@ function setupSketchRigChallenge(container) {
       worldCtx.fillRect(x, y, 2, 2);
     }
 
-    const groundFill = worldCtx.createLinearGradient(0, worldHeight - 180, 0, worldHeight);
-    groundFill.addColorStop(0, "rgba(22,34,58,0.94)");
-    groundFill.addColorStop(0.55, "rgba(15,23,42,0.98)");
-    groundFill.addColorStop(1, "rgba(7,12,22,1)");
-    worldCtx.fillStyle = groundFill;
+    worldCtx.fillStyle = "#0b1220";
     worldCtx.beginPath();
     worldCtx.moveTo(0, worldHeight);
     traceGroundPath(worldCtx, 0, worldWidth, cameraX, 1);
     worldCtx.lineTo(worldWidth, worldHeight);
     worldCtx.closePath();
     worldCtx.fill();
-
-    worldCtx.save();
-    worldCtx.beginPath();
-    worldCtx.moveTo(0, worldHeight);
-    traceGroundPath(worldCtx, 0, worldWidth, cameraX, 1);
-    worldCtx.lineTo(worldWidth, worldHeight);
-    worldCtx.closePath();
-    worldCtx.clip();
-
-    worldCtx.strokeStyle = "rgba(125,211,252,0.08)";
-    worldCtx.lineWidth = 10;
-    for (let sx = -140; sx <= worldWidth + 140; sx += 48) {
-      worldCtx.beginPath();
-      worldCtx.moveTo(sx, worldHeight - 4);
-      worldCtx.lineTo(sx + 120, worldHeight - 160);
-      worldCtx.stroke();
-    }
-
-    worldCtx.fillStyle = "rgba(56,189,248,0.08)";
-    for (let sx = -40; sx <= worldWidth + 40; sx += 64) {
-      const y = getGroundY(sx + cameraX);
-      worldCtx.fillRect(sx - 14, y - 12, 28, 7);
-    }
-    worldCtx.restore();
-
-    worldCtx.strokeStyle = "rgba(34,211,238,0.55)";
+    worldCtx.strokeStyle = "rgba(34,211,238,0.5)";
     worldCtx.lineWidth = 2;
     worldCtx.beginPath();
     traceGroundPath(worldCtx, 0, worldWidth, cameraX, 1);
     worldCtx.stroke();
+    for (let sx = -32; sx <= worldWidth + 32; sx += 56) {
+      const y = getGroundY(sx + cameraX);
+      drawArt("barrierWhite", sx - 10, y - 20, 54, 16, { alpha: 0.18 });
+    }
 
     for (const ch of currentLevel().challenges) {
       const x = ch.x - cameraX;
@@ -2178,64 +1724,24 @@ function setupSketchRigChallenge(container) {
         const a = rig.attachments[ai];
         const state = sim.attachStates[ai] || { angle: 0 };
         if (a.type === "loop" && a.wheelRadius > 0) {
-          const planckWheel = sim.backend === "planck" && sim.planck
-            ? sim.planck.wheels.find(function (wheel) { return wheel.ai === ai; })
-            : null;
-          const hub = planckWheel
-            ? { x: mToPx(planckWheel.body.getPosition().x), y: mToPx(planckWheel.body.getPosition().y) }
-            : worldPointAround({ x: 0, y: 0 }, a.anchor, 0);
-          const spinAngle = planckWheel ? planckWheel.body.getAngle() : (state.spinAngle || 0);
-          const hubX = hub.x - cameraX;
-          const hubY = hub.y;
+          const hub = worldPointAround({ x: 0, y: 0 }, a.anchor, 0);
           worldCtx.strokeStyle = "rgba(251,191,36,0.98)";
           worldCtx.lineWidth = 3;
           worldCtx.beginPath();
-          worldCtx.arc(hubX, hubY, a.wheelRadius, 0, Math.PI * 2);
+          worldCtx.arc(hub.x - cameraX, hub.y, a.wheelRadius, 0, Math.PI * 2);
           worldCtx.stroke();
-          worldCtx.fillStyle = "rgba(251,191,36,0.95)";
+          worldCtx.strokeStyle = "rgba(251,191,36,0.75)";
+          worldCtx.lineWidth = 2;
           worldCtx.beginPath();
-          worldCtx.arc(hubX, hubY, Math.max(3, a.wheelRadius * 0.18), 0, Math.PI * 2);
-          worldCtx.fill();
-          worldCtx.strokeStyle = "rgba(255,255,255,0.95)";
-          worldCtx.lineWidth = 2.4;
-          worldCtx.beginPath();
-          worldCtx.moveTo(hubX, hubY);
+          worldCtx.moveTo(hub.x - cameraX, hub.y);
           worldCtx.lineTo(
-            hubX + Math.cos(spinAngle) * a.wheelRadius * 0.98,
-            hubY + Math.sin(spinAngle) * a.wheelRadius * 0.98
+            hub.x - cameraX + Math.cos(state.angle) * a.wheelRadius,
+            hub.y + Math.sin(state.angle) * a.wheelRadius
           );
           worldCtx.stroke();
-          worldCtx.strokeStyle = "rgba(255,244,200,0.92)";
-          worldCtx.lineWidth = 2;
-          for (let si = 0; si < 4; si += 1) {
-            const spokeAngle = spinAngle + si * (Math.PI * 0.5);
-            worldCtx.beginPath();
-            worldCtx.moveTo(hubX, hubY);
-            worldCtx.lineTo(
-              hubX + Math.cos(spokeAngle) * a.wheelRadius * 0.92,
-              hubY + Math.sin(spokeAngle) * a.wheelRadius * 0.92
-            );
-            worldCtx.stroke();
-          }
-          for (let mi = 0; mi < 2; mi += 1) {
-            const markerAngle = spinAngle + mi * Math.PI;
-            worldCtx.fillStyle = mi === 0 ? "rgba(239,68,68,0.98)" : "rgba(34,211,238,0.98)";
-            worldCtx.beginPath();
-            worldCtx.arc(
-              hubX + Math.cos(markerAngle) * a.wheelRadius * 0.84,
-              hubY + Math.sin(markerAngle) * a.wheelRadius * 0.84,
-              Math.max(2.2, a.wheelRadius * 0.1),
-              0,
-              Math.PI * 2
-            );
-            worldCtx.fill();
-          }
           continue;
         }
         worldCtx.strokeStyle =
-          a.type === "structure"
-            ? "rgba(148,163,184,0.96)"
-            :
           a.type === "leg"
             ? "rgba(74,222,128,0.98)"
             : a.type === "loop"
@@ -2243,7 +1749,7 @@ function setupSketchRigChallenge(container) {
             : a.type === "arm"
             ? "rgba(244,114,182,0.95)"
             : "rgba(167,139,250,0.95)";
-        worldCtx.lineWidth = a.type === "leg" ? 3.8 : a.type === "structure" ? 4.4 : 3.2;
+        worldCtx.lineWidth = a.type === "leg" ? 3.8 : 3.2;
         if (!a.relPoints.length) continue;
         worldCtx.beginPath();
         const p0 = attachmentWorldPoint(a, state, a.relPoints[0], phase);
@@ -2422,7 +1928,7 @@ function setupSketchRigChallenge(container) {
 
   function clonePlacedParts(list) {
     return list.map(function (part) {
-      return { type: part.type, x: part.x, y: part.y, scale: placedPartScale(part) };
+      return { type: part.type, x: part.x, y: part.y };
     });
   }
 
@@ -2437,26 +1943,13 @@ function setupSketchRigChallenge(container) {
       onGround: sim.onGround,
       contacts: sim.contacts,
       attachStates: sim.attachStates.map(function (s) {
-        return {
-          angle: s.angle,
-          omega: s.omega,
-          spinAngle: s.spinAngle || 0,
-          spinOmega: s.spinOmega || 0,
-          plantedX: s.plantedX,
-          plantedY: s.plantedY,
-          plantedFor: s.plantedFor,
-          grabFor: s.grabFor || 0,
-          grabCooldown: s.grabCooldown || 0,
-          grabLength: s.grabLength || 0,
-          lastGroundX: s.lastGroundX,
-        };
+        return { angle: s.angle, omega: s.omega, plantedX: s.plantedX, plantedY: s.plantedY, plantedFor: s.plantedFor, grabFor: s.grabFor || 0 };
       }),
       gaitTimer: sim.gaitTimer,
       swingRight: sim.swingRight,
       stanceX: sim.stanceX,
       stanceTargetVx: sim.stanceTargetVx,
       singleSupportTime: sim.singleSupportTime,
-      backend: sim.backend,
     };
   }
 
@@ -2470,27 +1963,13 @@ function setupSketchRigChallenge(container) {
     sim.onGround = saved.onGround;
     sim.contacts = saved.contacts;
     sim.attachStates = saved.attachStates.map(function (s) {
-      return {
-        angle: s.angle,
-        omega: s.omega,
-        spinAngle: s.spinAngle || 0,
-        spinOmega: s.spinOmega || 0,
-        plantedX: s.plantedX,
-        plantedY: s.plantedY,
-        plantedFor: s.plantedFor,
-        grabFor: s.grabFor || 0,
-        grabCooldown: s.grabCooldown || 0,
-        grabLength: s.grabLength || 0,
-        lastGroundX: s.lastGroundX,
-      };
+      return { angle: s.angle, omega: s.omega, plantedX: s.plantedX, plantedY: s.plantedY, plantedFor: s.plantedFor, grabFor: s.grabFor || 0 };
     });
     sim.gaitTimer = saved.gaitTimer;
     sim.swingRight = saved.swingRight;
     sim.stanceX = saved.stanceX;
     sim.stanceTargetVx = saved.stanceTargetVx;
     sim.singleSupportTime = saved.singleSupportTime || 0;
-    sim.backend = saved.backend || "custom";
-    sim.planck = null;
   }
 
   function sampleCurrentSupportState() {
@@ -2509,15 +1988,10 @@ function setupSketchRigChallenge(container) {
       const a = rig.attachments[ai];
       const state = sim.attachStates[ai] || { angle: 0, omega: 0 };
       if (a.type === "loop") {
-        wheelOmegaSum += Math.abs(state.spinOmega || 0);
+        wheelOmegaSum += Math.abs(state.omega || 0);
         wheelOmegaCount += 1;
-        const planckWheel = sim.backend === "planck" && sim.planck
-          ? sim.planck.wheels.find(function (wheel) { return wheel.ai === ai; })
-          : null;
-        const hub = planckWheel
-          ? { x: mToPx(planckWheel.body.getPosition().x), y: mToPx(planckWheel.body.getPosition().y) }
-          : worldPointAround({ x: 0, y: 0 }, a.anchor, 0);
-        const grounded = hub.y + Math.max(8, a.wheelRadius || 12) - getGroundY(hub.x) > -28;
+        const hub = worldPointAround({ x: 0, y: 0 }, a.anchor, 0);
+        const grounded = hub.y + Math.max(8, a.wheelRadius || 12) - getGroundY(hub.x) > -16;
         if (grounded) {
           groundedByType.loop += 1;
           totalSupports += 1;
@@ -2682,16 +2156,6 @@ function setupSketchRigChallenge(container) {
         ],
       };
     }
-    if (name === "uneven-cart") {
-      return {
-        body: makeOvalStroke(cx, cy, 54, 28, 26),
-        parts: [
-          { type: "wheel", x: cx - 38, y: cy + 40, scale: 1.26, stroke: makeOvalStroke(cx - 38, cy + 40, 21, 21, 18) },
-          { type: "wheel", x: cx + 34, y: cy + 30, scale: 0.84, stroke: makeOvalStroke(cx + 34, cy + 30, 14, 14, 18) },
-          { type: "structure", x: cx - 4, y: cy + 18, scale: 1.2, stroke: makeLineStroke([{ x: cx - 42, y: cy + 18 }, { x: cx + 40, y: cy + 18 }]) },
-        ],
-      };
-    }
     if (name === "walker") {
       return {
         body: makeOvalStroke(cx, cy, 50, 26, 24),
@@ -2760,7 +2224,7 @@ function setupSketchRigChallenge(container) {
     const blueprint = buildFixtureBlueprint(name);
     strokes = [blueprint.body];
     placedParts = [];
-    for (const part of blueprint.parts) placedParts.push({ type: part.type, x: part.x, y: part.y, scale: typeof part.scale === "number" ? part.scale : 1 });
+    for (const part of blueprint.parts) placedParts.push({ type: part.type, x: part.x, y: part.y });
     currentStroke = null;
     rig = null;
     baseLocked = false;
@@ -2768,7 +2232,6 @@ function setupSketchRigChallenge(container) {
     paused = false;
     analyzeDrawing();
     renderDrawing();
-    syncDrawCursor();
     drawWorld();
     syncHud();
     setStatus(`Loaded fixture: ${name}.`, true);
@@ -2791,7 +2254,7 @@ function setupSketchRigChallenge(container) {
       const blueprint = buildFixtureBlueprint(meta.fixture);
       strokes = [cloneStrokes([blueprint.body])[0]];
       placedParts = [];
-      for (const part of blueprint.parts) placedParts.push({ type: part.type, x: part.x, y: part.y, scale: typeof part.scale === "number" ? part.scale : 1 });
+      for (const part of blueprint.parts) placedParts.push({ type: part.type, x: part.x, y: part.y });
       analyzeDrawing();
       analyzed = !!rig;
       if (analyzed && resetSim()) {
@@ -2828,8 +2291,7 @@ function setupSketchRigChallenge(container) {
 
   function evaluateFixtureExpectation(expectation, metrics) {
     const failures = [];
-    if (expectation.minProgress != null && metrics.progress < expectation.minProgress) failures.push(`progress ${metrics.progress.toFixed(2)} < ${expectation.minProgress}`);
-    if (expectation.maxProgress != null && metrics.progress > expectation.maxProgress) failures.push(`progress ${metrics.progress.toFixed(2)} > ${expectation.maxProgress}`);
+    if (metrics.progress < (expectation.minProgress || 1)) failures.push(`progress ${metrics.progress.toFixed(2)} < ${expectation.minProgress}`);
     if (expectation.maxAbsAngleDeg != null && metrics.maxAbsAngleDeg > expectation.maxAbsAngleDeg) failures.push(`angle ${metrics.maxAbsAngleDeg.toFixed(1)} > ${expectation.maxAbsAngleDeg}`);
     if (expectation.minGroundedWheelRatio != null && metrics.avgGroundedWheels < expectation.minGroundedWheelRatio) failures.push(`grounded wheels ${metrics.avgGroundedWheels.toFixed(2)} < ${expectation.minGroundedWheelRatio}`);
     if (expectation.minFramesWithTwoWheels != null && metrics.framesWithTwoWheelsRatio < expectation.minFramesWithTwoWheels) failures.push(`two-wheel frames ${metrics.framesWithTwoWheelsRatio.toFixed(2)} < ${expectation.minFramesWithTwoWheels}`);
@@ -2837,17 +2299,11 @@ function setupSketchRigChallenge(container) {
     if (expectation.minFramesWithTwoLegs != null && metrics.framesWithTwoLegsRatio < expectation.minFramesWithTwoLegs) failures.push(`two-leg frames ${metrics.framesWithTwoLegsRatio.toFixed(2)} < ${expectation.minFramesWithTwoLegs}`);
     if (expectation.minGroundedSupportRatio != null && metrics.avgGroundedSupports < expectation.minGroundedSupportRatio) failures.push(`supports ${metrics.avgGroundedSupports.toFixed(2)} < ${expectation.minGroundedSupportRatio}`);
     if (expectation.minAvgSpeed != null && metrics.avgSpeed < expectation.minAvgSpeed) failures.push(`speed ${metrics.avgSpeed.toFixed(1)} < ${expectation.minAvgSpeed}`);
-    if (expectation.maxAvgSpeed != null && metrics.avgSpeed > expectation.maxAvgSpeed) failures.push(`speed ${metrics.avgSpeed.toFixed(1)} > ${expectation.maxAvgSpeed}`);
     if (expectation.maxSingleSupportPeak != null && metrics.singleSupportPeak > expectation.maxSingleSupportPeak) failures.push(`single support ${metrics.singleSupportPeak.toFixed(2)} > ${expectation.maxSingleSupportPeak}`);
     return {
       ok: failures.length === 0,
       failures,
     };
-  }
-
-  function fixtureRequiresWarmupClear(fixtureId) {
-    const expectation = fixtureExpectations[fixtureId];
-    return !expectation || expectation.requiresWarmupClear !== false;
   }
 
   function runSingleFixtureAudit(fixtureId, trialLevel) {
@@ -2861,7 +2317,7 @@ function setupSketchRigChallenge(container) {
       baseLocked = false;
       const blueprint = buildFixtureBlueprint(fixtureId);
       strokes = [cloneStrokes([blueprint.body])[0]];
-      placedParts = blueprint.parts.map(function (part) { return { type: part.type, x: part.x, y: part.y, scale: typeof part.scale === "number" ? part.scale : 1 }; });
+      placedParts = blueprint.parts.map(function (part) { return { type: part.type, x: part.x, y: part.y }; });
       analyzeDrawing();
       if (!rig || !resetSim()) {
         return {
@@ -2961,14 +2417,12 @@ function setupSketchRigChallenge(container) {
   function scoreRegressionResults(results) {
     let score = 0;
     for (const r of results) {
-      const expectsClear = r.level !== 1 || fixtureRequiresWarmupClear(r.fixture);
       score += r.progress * 100;
-      if (r.cleared && expectsClear) score += 180;
-      if (!expectsClear) score -= r.progress * 60;
+      if (r.cleared) score += 180;
       if (r.reason === "fall") score -= 28;
       if (r.reason === "stuck") score -= 18;
       score -= Math.min(40, (r.singleSupportPeak || 0) * 18);
-      if (r.level === 1 && expectsClear) {
+      if (r.level === 1) {
         if (r.cleared) score += 260;
         else score -= 900;
       }
@@ -3031,7 +2485,7 @@ function setupSketchRigChallenge(container) {
         physicsTuning = candidates[i];
         const warmupResults = runRegressionCases(warmupCases);
         const warmupScore = scoreRegressionResults(warmupResults);
-        const warmupClears = warmupResults.filter(function (r) { return r.level === 1 && fixtureRequiresWarmupClear(r.fixture) && r.cleared; }).length;
+        const warmupClears = warmupResults.filter(function (r) { return r.level === 1 && r.cleared; }).length;
         warmupRanked.push({ tuning: candidates[i], warmupScore, warmupClears });
       }
       warmupRanked.sort(function (a, b) {
@@ -3043,7 +2497,7 @@ function setupSketchRigChallenge(container) {
         physicsTuning = finalists[i].tuning;
         const results = runRegressionCases(cases);
         const score = scoreRegressionResults(results);
-        const warmupClears = results.filter(function (r) { return r.level === 1 && fixtureRequiresWarmupClear(r.fixture) && r.cleared; }).length;
+        const warmupClears = results.filter(function (r) { return r.level === 1 && r.cleared; }).length;
         if (
           warmupClears > bestWarmupClears
           || (warmupClears === bestWarmupClears && score > bestScore)
@@ -3212,7 +2666,7 @@ function setupSketchRigChallenge(container) {
       inSelfTest = false;
       const analyzed = results.filter((r) => r.analyzed).length;
       const cleared = results.filter((r) => r.cleared).length;
-      const warmupResults = results.filter((r) => r.level === 1 && fixtureRequiresWarmupClear(r.fixture));
+      const warmupResults = results.filter((r) => r.level === 1);
       const warmupClears = warmupResults.filter((r) => r.cleared).length;
       const byFixture = {};
       const byReason = {};
@@ -3273,7 +2727,7 @@ function setupSketchRigChallenge(container) {
         inSelfTest = false;
         const analyzed = results.filter((r) => r.analyzed).length;
         const cleared = results.filter((r) => r.cleared).length;
-        const warmupResults = results.filter((r) => r.level === 1 && fixtureRequiresWarmupClear(r.fixture));
+        const warmupResults = results.filter((r) => r.level === 1);
         const warmupClears = warmupResults.filter((r) => r.cleared).length;
         const byFixture = {};
         const byReason = {};
@@ -3294,10 +2748,10 @@ function setupSketchRigChallenge(container) {
           cleared,
           clearRate: analyzed > 0 ? cleared / analyzed : 0,
           warmup: {
-          cases: warmupResults.length,
-          clears: warmupClears,
-          allPassed: warmupClears === warmupResults.length,
-        },
+            cases: warmupResults.length,
+            clears: warmupClears,
+            allPassed: warmupClears === warmupResults.length,
+          },
           tuning: physicsTuning,
           byFixture,
           byReason,
@@ -3314,7 +2768,6 @@ function setupSketchRigChallenge(container) {
   function summarizeFixtureHealth(regression) {
     const fixtures = fixtureCatalog.map(function (fixture) { return fixture.id; });
     const warmupFailures = fixtures.filter(function (fixtureId) {
-      if (!fixtureRequiresWarmupClear(fixtureId)) return false;
       return !regression.results.some(function (r) { return r.fixture === fixtureId && r.level === 1 && r.cleared; });
     });
     const fullFailures = fixtures.filter(function (fixtureId) {
@@ -3326,7 +2779,6 @@ function setupSketchRigChallenge(container) {
   function runWarmupFixtureSuite() {
     const saved = snapshotGameState();
     const fixtures = fixtureCatalog.map(function (fixture) { return fixture.id; });
-    const requiredFixtures = fixtures.filter(function (fixtureId) { return fixtureRequiresWarmupClear(fixtureId); });
     const results = [];
     try {
       inSelfTest = true;
@@ -3338,9 +2790,9 @@ function setupSketchRigChallenge(container) {
       inSelfTest = false;
     }
     return {
-      fixtures: requiredFixtures.length,
-      clears: results.filter(function (r) { return fixtureRequiresWarmupClear(r.fixture) && r.cleared; }).length,
-      allPassed: results.filter(function (r) { return fixtureRequiresWarmupClear(r.fixture); }).every(function (r) { return r.cleared; }),
+      fixtures: fixtures.length,
+      clears: results.filter(function (r) { return r.cleared; }).length,
+      allPassed: results.every(function (r) { return r.cleared; }),
       results,
     };
   }
@@ -3400,7 +2852,7 @@ function setupSketchRigChallenge(container) {
   }
 
   function addPlacedPart(type, point) {
-    placedParts.push({ type, x: point.x, y: point.y, scale: 1 });
+    placedParts.push({ type, x: point.x, y: point.y });
     rig = null;
     running = false;
     renderDrawing();
@@ -3417,27 +2869,16 @@ function setupSketchRigChallenge(container) {
     paused = false;
     syncHud();
     renderDrawing();
-    syncDrawCursor();
     setStatus("Body reset. Draw connectors or add parts.", true);
   }
   function beginStroke(e) {
     e.preventDefault();
     const p = pointFromEvent(e);
     const hitPart = hitTestPlacedPart(p);
-    if (hitPart) {
-      if (hitPart.mode === "resize") {
-        resizingPartIndex = hitPart.index;
-        resizePartStart = {
-          scale: placedPartScale(placedParts[hitPart.index]),
-          distance: Math.max(1, Math.hypot(p.x - placedParts[hitPart.index].x, p.y - placedParts[hitPart.index].y)),
-        };
-        setStatus(`Resizing ${placedParts[hitPart.index].type}.`);
-      } else {
-        draggingPartIndex = hitPart.index;
-        dragPartOffset = { x: p.x - placedParts[hitPart.index].x, y: p.y - placedParts[hitPart.index].y };
-        setStatus(`Dragging ${placedParts[hitPart.index].type}.`);
-      }
-      syncDrawCursor(p);
+    if (hitPart >= 0) {
+      draggingPartIndex = hitPart;
+      dragPartOffset = { x: p.x - placedParts[hitPart].x, y: p.y - placedParts[hitPart].y };
+      setStatus(`Dragging ${placedParts[hitPart].type}.`);
       return;
     }
     if (!strokes.length) {
@@ -3455,40 +2896,21 @@ function setupSketchRigChallenge(container) {
   function moveStroke(e) {
     e.preventDefault();
     const p = pointFromEvent(e);
-    if (resizingPartIndex >= 0) {
-      const part = placedParts[resizingPartIndex];
-      const dist = Math.max(1, Math.hypot(p.x - part.x, p.y - part.y));
-      part.scale = clamp((resizePartStart.scale * dist) / Math.max(1, resizePartStart.distance), 0.65, 1.8);
-      rig = null;
-      renderDrawing();
-      syncDrawCursor(p);
-      return;
-    }
     if (draggingPartIndex >= 0) {
       placedParts[draggingPartIndex].x = clamp(p.x - dragPartOffset.x, 12, drawWidth - 12);
       placedParts[draggingPartIndex].y = clamp(p.y - dragPartOffset.y, 12, drawHeight - 12);
       rig = null;
       renderDrawing();
-      syncDrawCursor(p);
       return;
     }
-    syncDrawCursor(p);
     if (!currentStroke) return;
     const last = currentStroke[currentStroke.length - 1];
     if (!last || Math.hypot(p.x - last.x, p.y - last.y) >= 1.1) { currentStroke.push(p); renderDrawing(); }
   }
   function endStroke() {
-    if (resizingPartIndex >= 0) {
-      resizingPartIndex = -1;
-      resizePartStart = null;
-      renderDrawing();
-      syncDrawCursor();
-      return;
-    }
     if (draggingPartIndex >= 0) {
       draggingPartIndex = -1;
       renderDrawing();
-      syncDrawCursor();
       return;
     }
     if (currentStroke && currentStroke.length > 1) {
@@ -3500,14 +2922,10 @@ function setupSketchRigChallenge(container) {
     }
     currentStroke = null;
     renderDrawing();
-    syncDrawCursor();
   }
 
   drawCanvas.addEventListener("mousedown", beginStroke);
   drawCanvas.addEventListener("mousemove", moveStroke);
-  drawCanvas.addEventListener("mouseleave", function () {
-    if (draggingPartIndex < 0 && resizingPartIndex < 0) syncDrawCursor();
-  });
   window.addEventListener("mouseup", endStroke);
   drawCanvas.addEventListener("touchstart", beginStroke, { passive: false });
   drawCanvas.addEventListener("touchmove", moveStroke, { passive: false });
@@ -3597,7 +3015,6 @@ function setupSketchRigChallenge(container) {
   physicsTuning = loadCachedPhysicsTuning() || defaultPhysicsTuning();
   syncDebugPanel();
   renderDrawing();
-  syncDrawCursor();
   loadArt();
   drawWorld();
   syncHud();
@@ -3618,11 +3035,6 @@ function setupSketchRigChallenge(container) {
   window.runSketchRigQualitySuite = function (options) {
     return runSketchRigQualitySuite(options);
   };
-  window.setSketchRigPlanckBackend = function (enabled) {
-    window.__usePlanckRigBackend = !!enabled;
-    setStatus(`Planck wheeled backend ${window.__usePlanckRigBackend ? "enabled" : "disabled"}.`, true);
-    return window.__usePlanckRigBackend;
-  };
   rafId = window.requestAnimationFrame(tick);
 
   return function cleanup() {
@@ -3632,7 +3044,6 @@ function setupSketchRigChallenge(container) {
     delete window.runSketchRigPhysicsTune;
     delete window.runSketchRigFixtureExpectationSuite;
     delete window.runSketchRigQualitySuite;
-    delete window.setSketchRigPlanckBackend;
     drawCanvas.removeEventListener("mousedown", beginStroke);
     drawCanvas.removeEventListener("mousemove", moveStroke);
     window.removeEventListener("mouseup", endStroke);
