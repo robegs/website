@@ -1,5 +1,5 @@
 {
-  "last_run": "2026-04-01T07:26:29Z",
+  "last_run": "2026-04-16T07:53:21Z",
   "sources": {
     "Google Scholar": {
       "url": "https://scholar.google.com/citations?user=ExKBvzMAAAAJ&hl=es",
@@ -9,7 +9,7 @@
     "NEC Profile": {
       "url": "https://neclab.eu/research-groups/system-platform-for-iot-and-ai/intelligent-software-system/our-researchers/people-detail/dr-roberto-gonzalez-sanchez",
       "hash": "80784d3772ffc696d3d8ac502f065bc3292b172e2f1dc329b182368883585b38",
-      "checked_at": "2026-04-01T07:26:28Z"
+      "checked_at": "2026-04-16T07:53:20Z"
     }
   },
   "errors": [
@@ -21,7 +21,7 @@
     {
       "name": "LinkedIn",
       "url": "https://www.linkedin.com/in/robegs/",
-      "error": "HTTP Error 999: Request denied"
+      "error": "HTTP Error 999: <none>"
     }
   ]
 }
