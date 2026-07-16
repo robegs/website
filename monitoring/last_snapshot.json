@@ -1,27 +1,22 @@
 {
-  "last_run": "2026-07-01T09:53:40Z",
+  "last_run": "2026-07-16T08:18:04Z",
   "sources": {
     "Google Scholar": {
       "url": "https://scholar.google.com/citations?user=ExKBvzMAAAAJ&hl=es",
-      "hash": "43be76fb1b8dbe79309d55fc502d61b59ba6df6e77f5d915f37294f701b4da90",
-      "checked_at": "2026-05-16T08:07:54Z"
+      "hash": "cb7109a60404b3f0e7d3e350c3b1e9ae36836433902c7bddc16c5cec6a996649",
+      "checked_at": "2026-07-16T08:18:01Z"
     },
     "NEC Profile": {
       "url": "https://neclab.eu/research-groups/system-platform-for-iot-and-ai/intelligent-software-system/our-researchers/people-detail/dr-roberto-gonzalez-sanchez",
-      "hash": "af24ca66d45cffd23e6d585cca277d76849d69db51822aead3e3790dc40b650f",
-      "checked_at": "2026-07-01T09:53:40Z"
+      "hash": "f6a83194a56b0c03b6c440b62d87a09d84678a2e3ae9556b87e8591c978381f3",
+      "checked_at": "2026-07-16T08:18:03Z"
     }
   },
   "errors": [
     {
-      "name": "Google Scholar",
-      "url": "https://scholar.google.com/citations?user=ExKBvzMAAAAJ&hl=es",
-      "error": "HTTP Error 403: Forbidden"
-    },
-    {
       "name": "LinkedIn",
       "url": "https://www.linkedin.com/in/robegs/",
-      "error": "HTTP Error 429: Too Many Requests"
+      "error": "HTTP Error 999: unknown"
     }
   ]
 }
