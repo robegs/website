@@ -4,8 +4,8 @@ const CANDIDATE_THRESHOLDS = Array.from({length: 121}, (_, index) => index - 60)
 const MIN_THRESHOLD_LINES = 5;
 const MAX_THRESHOLD_LINES = 9;
 const SOURCE = "era5-open-meteo";
-const CACHE_PREFIX = "calor-compare-session-v3:";
-const CACHE_MAX = 20;
+const CACHE_PREFIX = "calor-compare-session-v4:";
+const CACHE_MAX = 8;
 const BASELINES = {
   "1981-2010": [1981, 2010],
   "1991-2020": [1991, 2020]
@@ -15,9 +15,10 @@ const state = {
   b: null,
   timers: {},
   controllers: {},
-  thresholds: [],
-  pendingBase: null,
-  lastResult: null
+  thresholds: {max: [], min: []},
+  pendingThresholds: {max: null, min: null},
+  lastResult: null,
+  comparisonRun: 0
 };
 
 $("compare-end").value = YEAR_NOW - 1;
@@ -104,93 +105,45 @@ function requireOk(response) {
   if (!response.ok) throw new Error(`La fuente devolvió el error HTTP ${response.status}.`);
 }
 
-function currentThresholds() {
-  return state.thresholds;
-}
-
-function selectedThresholds() {
-  return [...$("threshold-controls").querySelectorAll("input:checked")]
-    .map(input => Number(input.value))
-    .sort((a, b) => a - b);
+function currentThresholds(kind) {
+  return state.thresholds[kind] || [];
 }
 
 function automaticThreshold(thresholds) {
   return thresholds.find(value => value % 5 === 0) ?? thresholds[Math.floor(thresholds.length / 2)];
 }
 
-function resetThresholdControls() {
-  state.thresholds = [];
-  const placeholder = document.createElement("span");
-  placeholder.className = "hint threshold-placeholder";
-  placeholder.textContent = "Se calcularán automáticamente al comparar las ubicaciones.";
-  $("threshold-controls").replaceChildren(placeholder);
-  $("compare-base").replaceChildren(new Option("Automático según las ubicaciones", "auto", true, true));
-  $("compare-base").disabled = true;
-  ["threshold-main", "threshold-all", "threshold-none"].forEach(id => $(id).disabled = true);
+function thresholdSelectId(kind) {
+  return kind === "max" ? "compare-max-threshold" : "compare-min-threshold";
 }
 
-function buildThresholdControls(resetSelection = true, preferredBase = null) {
-  const thresholds = currentThresholds();
-  if (!thresholds.length) { resetThresholdControls(); return; }
-  const previous = resetSelection ? [] : selectedThresholds();
+function resetThresholdSelectors() {
+  state.thresholds = {max: [], min: []};
+  ["max", "min"].forEach(kind => {
+    const select = $(thresholdSelectId(kind));
+    select.replaceChildren(new Option("Automático según las ubicaciones", "auto", true, true));
+    select.disabled = true;
+  });
+}
+
+function populateThresholdSelector(kind, preferredThreshold = null) {
+  const thresholds = currentThresholds(kind);
+  if (!thresholds.length) throw new Error(`No se pudo ajustar el umbral de ${kind === "max" ? "días" : "noches"}.`);
   const automatic = automaticThreshold(thresholds);
-  const oldBase = Number($("compare-base").value);
-  const base = [preferredBase, oldBase, automatic].find(value => Number.isFinite(value) && thresholds.includes(value)) ?? automatic;
-  const defaultSet = new Set([thresholds[0], ...thresholds.filter(value => value % 5 === 0), thresholds.at(-1), base]);
-  const selected = new Set(previous.length ? previous : defaultSet);
-  const fragment = document.createDocumentFragment();
-
-  thresholds.forEach(value => {
-    const label = document.createElement("label");
-    label.className = "check";
-    label.style.paddingBottom = "0";
-    const input = document.createElement("input");
-    input.type = "checkbox";
-    input.value = String(value);
-    input.checked = selected.has(value);
-    input.addEventListener("change", () => {
-      ensureVisibleBase();
-      rerenderLastResult();
-    });
-    label.append(input, ` >${value} °C`);
-    fragment.append(label);
-  });
-  $("threshold-controls").replaceChildren(fragment);
-
-  $("compare-base").replaceChildren(...thresholds.map(value => {
-    const option = document.createElement("option");
-    option.value = String(value);
-    option.textContent = `>${value} °C`;
-    return option;
-  }));
-  $("compare-base").value = String(base);
-  $("compare-base").disabled = false;
-  ["threshold-main", "threshold-all", "threshold-none"].forEach(id => $(id).disabled = false);
-  ensureVisibleBase();
+  const previous = Number($(thresholdSelectId(kind)).value);
+  const selected = [preferredThreshold, previous, automatic]
+    .find(value => Number.isFinite(value) && thresholds.includes(value)) ?? automatic;
+  const options = thresholds.map(value => new Option(`>${value} °C${value === automatic ? " · automático" : ""}`, value));
+  const select = $(thresholdSelectId(kind));
+  select.replaceChildren(...options);
+  select.value = String(selected);
+  select.disabled = false;
+  return selected;
 }
 
-function setThresholdPreset(preset) {
-  const base = Number($("compare-base").value);
-  const thresholds = currentThresholds();
-  $("threshold-controls").querySelectorAll("input").forEach(input => {
-    const value = Number(input.value);
-    input.checked = preset === "all" || (preset === "main" && (value % 5 === 0 || value === thresholds[0] || value === thresholds.at(-1))) || (preset === "base" && value === base);
-  });
-  ensureVisibleBase();
-  rerenderLastResult();
-}
-
-function ensureVisibleBase() {
-  const checks = [...$("threshold-controls").querySelectorAll("input")];
-  let selected = checks.filter(input => input.checked);
-  if (!selected.length) {
-    const baseInput = checks.find(input => input.value === $("compare-base").value) || checks[0];
-    if (baseInput) baseInput.checked = true;
-    selected = baseInput ? [baseInput] : [];
-  }
-
-  const baseInput = checks.find(input => input.value === $("compare-base").value);
-  if (baseInput && !baseInput.checked) $("compare-base").value = selected[0].value;
+function selectedThreshold(kind) {
+  const value = Number($(thresholdSelectId(kind)).value);
+  return Number.isFinite(value) ? value : null;
 }
 
 function updateModeControls() {
@@ -208,11 +161,13 @@ function queueSearch(which) {
   state[which] = null;
   updateDocumentTitle();
   state.lastResult = null;
-  resetThresholdControls();
+  state.pendingThresholds = {max: null, min: null};
+  resetThresholdSelectors();
   $("comparison").hidden = true;
   ready();
   const query = $(`station-${which}`).value.trim();
   $(`chosen-${which}`).textContent = "Selecciona una sugerencia.";
+  setStatus("Selecciona ambas ubicaciones.");
   if (query.length > 1) state.timers[which] = setTimeout(() => search(which), 300);
 }
 
@@ -265,30 +220,29 @@ function choose(which, place) {
 function readInputs() {
   const start = Number($("compare-start").value);
   const end = Number($("compare-end").value);
-  const kind = $("compare-kind").value;
   const mode = $("compare-mode").value;
   const baseline = $("compare-baseline").value;
   const baselineYears = BASELINES[baseline];
-  const thresholds = currentThresholds();
-  const baseThreshold = $("compare-base").value === "auto" ? null : Number($("compare-base").value);
+  const maxThreshold = selectedThreshold("max");
+  const minThreshold = selectedThreshold("min");
 
   if (!Number.isInteger(start) || !Number.isInteger(end) || start > end || start < 1940 || end > YEAR_NOW) {
     const inputId = !Number.isInteger(start) || start < 1940 || start > end ? "compare-start" : "compare-end";
     throw configurationError("Revisa el periodo de años.", inputId);
   }
   if (!baselineYears) throw configurationError("Selecciona un periodo de referencia válido.", "compare-baseline");
-  if (thresholds.length && !thresholds.includes(baseThreshold)) throw configurationError("Selecciona un umbral de resumen válido.", "compare-base");
+  if (currentThresholds("max").length && !currentThresholds("max").includes(maxThreshold)) throw configurationError("Selecciona un umbral diurno válido.", "compare-max-threshold");
+  if (currentThresholds("min").length && !currentThresholds("min").includes(minThreshold)) throw configurationError("Selecciona un umbral nocturno válido.", "compare-min-threshold");
 
   return {
     start,
     end,
-    kind,
     mode,
     baseline,
     baselineStart: baselineYears[0],
     baselineEnd: baselineYears[1],
-    baseThreshold,
-    thresholds,
+    maxThreshold,
+    minThreshold,
     candidateThresholds: CANDIDATE_THRESHOLDS,
     fetchStart: mode === "anomaly" ? Math.min(start, baselineYears[0]) : start,
     fetchEnd: mode === "anomaly" ? Math.max(end, baselineYears[1]) : end,
@@ -299,7 +253,6 @@ function readInputs() {
 function cacheKey(place, values) {
   const parts = [
     SOURCE,
-    values.kind,
     values.fetchStart,
     values.fetchEnd,
     place.latitude.toFixed(4),
@@ -312,7 +265,7 @@ function cacheKey(place, values) {
 function readCache(key) {
   try {
     const cached = JSON.parse(sessionStorage.getItem(key));
-    return cached?.rows && cached?.meta ? cached : null;
+    return Array.isArray(cached?.rowsByKind?.max) && Array.isArray(cached?.rowsByKind?.min) && cached?.meta ? cached : null;
   } catch {
     return null;
   }
@@ -320,10 +273,10 @@ function readCache(key) {
 
 function writeCache(key, result) {
   try {
-    sessionStorage.setItem(key, JSON.stringify(result));
     const keys = Array.from({length: sessionStorage.length}, (_, index) => sessionStorage.key(index))
       .filter(item => item?.startsWith(CACHE_PREFIX));
-    while (keys.length > CACHE_MAX) sessionStorage.removeItem(keys.shift());
+    while (keys.length >= CACHE_MAX) sessionStorage.removeItem(keys.shift());
+    sessionStorage.setItem(key, JSON.stringify(result));
   } catch {
     // Storage can be unavailable in private browsing; comparison still works.
   }
@@ -332,6 +285,25 @@ function writeCache(key, result) {
 function latestDateFromError(text) {
   const matches = [...text.matchAll(/\b(\d{4}-\d{2}-\d{2})\b/g)].map(match => match[1]);
   return matches.length ? matches[matches.length - 1] : null;
+}
+
+function aggregateAnnualCounts(dates, temperatures, candidateThresholds) {
+  const years = new Map();
+  dates.forEach((date, index) => {
+    const year = Number(date.slice(0, 4));
+    const value = temperatures[index];
+    const row = years.get(year) || {year, days: 0, counts: {}};
+    if (Number.isFinite(value)) {
+      row.days += 1;
+      candidateThresholds.forEach(threshold => {
+        row.counts[threshold] = (row.counts[threshold] || 0) + Number(value > threshold);
+      });
+    }
+    years.set(year, row);
+  });
+  return [...years.values()]
+    .filter(row => row.days >= (isLeapYear(row.year) ? 351 : 350))
+    .sort((a, b) => a.year - b.year);
 }
 
 async function loadArchive(place, values) {
@@ -348,7 +320,7 @@ async function loadArchive(place, values) {
     daily: "temperature_2m_max,temperature_2m_min",
     timezone: place.timezone || "auto",
     models: "era5"
-  });
+  }).toString();
 
   let response = await fetchWithRetry(url);
   if (!response.ok && response.status === 400) {
@@ -365,37 +337,27 @@ async function loadArchive(place, values) {
 
   const data = await response.json();
   const dates = data.daily?.time;
-  const field = values.kind === "max" ? "temperature_2m_max" : "temperature_2m_min";
-  const temperatures = data.daily?.[field];
-  if (!Array.isArray(dates) || !Array.isArray(temperatures) || dates.length !== temperatures.length) {
-    throw new Error("La fuente no devolvió una serie diaria válida.");
+  const maxima = data.daily?.temperature_2m_max;
+  const minima = data.daily?.temperature_2m_min;
+  if (!Array.isArray(dates) || !Array.isArray(maxima) || !Array.isArray(minima) || dates.length !== maxima.length || dates.length !== minima.length) {
+    throw new Error("La fuente no devolvió series diarias válidas de máximas y mínimas.");
   }
-
-  const years = new Map();
-  dates.forEach((date, index) => {
-    const year = Number(date.slice(0, 4));
-    const value = temperatures[index];
-    const row = years.get(year) || {year, days: 0, counts: {}};
-    if (Number.isFinite(value)) {
-      row.days += 1;
-      values.candidateThresholds.forEach(threshold => {
-        row.counts[threshold] = (row.counts[threshold] || 0) + Number(value > threshold);
-      });
-    }
-    years.set(year, row);
-  });
-
-  const rows = [...years.values()]
-    .filter(row => row.days >= (isLeapYear(row.year) ? 351 : 350))
-    .sort((a, b) => a.year - b.year);
+  const maxRows = aggregateAnnualCounts(dates, maxima, values.candidateThresholds);
+  const minRows = aggregateAnnualCounts(dates, minima, values.candidateThresholds);
   const result = {
-    rows,
+    rowsByKind: {
+      max: maxRows,
+      min: minRows
+    },
     meta: {
       source: SOURCE,
       timezone: data.timezone || place.timezone || "auto",
       firstDate: dates[0] || null,
       lastDate: dates.at(-1) || null,
-      latestCompleteYear: rows.at(-1)?.year ?? null
+      latestCompleteYear: {
+        max: maxRows.at(-1)?.year ?? null,
+        min: minRows.at(-1)?.year ?? null
+      }
     }
   };
   writeCache(key, result);
@@ -413,10 +375,10 @@ function median(values) {
   return sorted.length % 2 ? sorted[middle] : (sorted[middle - 1] + sorted[middle]) / 2;
 }
 
-function adaptiveComparisonThresholds(firstRows, secondRows, values) {
+function adaptiveComparisonThresholds(firstRows, secondRows, values, kind) {
   const rows = [...firstRows, ...secondRows].filter(row => row.year >= values.start && row.year <= values.end);
   const totalDays = rows.reduce((sum, row) => sum + row.days, 0);
-  if (!totalDays) throw new Error("No hay temperaturas suficientes para ajustar los umbrales de la comparación.");
+  if (!totalDays) throw new Error(`No hay temperaturas suficientes para ajustar los umbrales de ${kind === "max" ? "días" : "noches"}.`);
   const exceedances = threshold => rows.reduce((sum, row) => sum + (row.counts[threshold] || 0), 0);
   const highest = [...CANDIDATE_THRESHOLDS].reverse().find(threshold => exceedances(threshold) > 0);
   if (!Number.isFinite(highest)) throw new Error("El rango de temperaturas queda fuera de los límites disponibles.");
@@ -436,39 +398,83 @@ function baselineMedians(rows, values) {
   return {medians, years: baselineRows.length};
 }
 
+function updateComparisonUrl(values) {
+  const url = new URL(location.href);
+  url.search = new URLSearchParams({
+    nameA: shortLocationName(state.a),
+    latA: state.a.latitude,
+    lonA: state.a.longitude,
+    tzA: state.a.timezone || "auto",
+    nameB: shortLocationName(state.b),
+    latB: state.b.latitude,
+    lonB: state.b.longitude,
+    tzB: state.b.timezone || "auto",
+    start: values.start,
+    end: values.end,
+    mode: values.mode,
+    baseline: values.baseline,
+    baseMax: values.maxThreshold,
+    baseMin: values.minThreshold,
+    run: 1
+  });
+  history.replaceState(null, "", url);
+}
+
+function comparisonUiSignature() {
+  return ["station-a", "station-b", "compare-start", "compare-end", "compare-mode", "compare-baseline"]
+    .map(id => $(id).value)
+    .join("\u0000");
+}
+
 async function compare() {
+  const runId = ++state.comparisonRun;
+  let firstPlace = null;
+  let secondPlace = null;
+  let uiSignature = null;
+  const isCurrent = () => runId === state.comparisonRun
+    && state.a === firstPlace
+    && state.b === secondPlace
+    && comparisonUiSignature() === uiSignature;
   try {
     const values = readInputs();
     if (!state.a || !state.b) throw new Error("Selecciona ambas ubicaciones.");
+    firstPlace = state.a;
+    secondPlace = state.b;
+    uiSignature = comparisonUiSignature();
     $("compare-button").disabled = true;
     $("comparison").hidden = true;
     setStatus("Cargando la primera serie…");
-    const first = await loadArchive(state.a, values);
+    const first = await loadArchive(firstPlace, values);
+    if (!isCurrent()) return;
     setStatus("Cargando la segunda serie…");
-    const second = await loadArchive(state.b, values);
+    const second = await loadArchive(secondPlace, values);
+    if (!isCurrent()) return;
 
-    const requestedBase = values.baseThreshold ?? state.pendingBase;
-    state.thresholds = adaptiveComparisonThresholds(first.rows, second.rows, values);
-    buildThresholdControls(true, requestedBase);
-    values.thresholds = [...state.thresholds];
-    values.baseThreshold = Number($("compare-base").value);
-    state.pendingBase = null;
+    const requestedMax = values.maxThreshold ?? state.pendingThresholds.max;
+    const requestedMin = values.minThreshold ?? state.pendingThresholds.min;
+    state.thresholds.max = adaptiveComparisonThresholds(first.rowsByKind.max, second.rowsByKind.max, values, "max");
+    state.thresholds.min = adaptiveComparisonThresholds(first.rowsByKind.min, second.rowsByKind.min, values, "min");
+    values.maxThreshold = populateThresholdSelector("max", requestedMax);
+    values.minThreshold = populateThresholdSelector("min", requestedMin);
+    state.pendingThresholds = {max: null, min: null};
 
     state.lastResult = {first, second, values};
     render(first, second, values);
+    updateComparisonUrl(values);
     $("comparison").hidden = false;
     if (usePhoneCharts()) requestAnimationFrame(() => $("comparison").scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" }));
     setStatus(first.cached && second.cached
       ? "Comparación lista (ambas series se recuperaron de la caché de esta sesión)."
       : "Comparación lista.");
   } catch (error) {
+    if (firstPlace && !isCurrent()) return;
     if (error.inputId) {
       document.querySelector(".advanced-config").open = true;
       requestAnimationFrame(() => $(error.inputId)?.focus());
     }
     setStatus(`No se pudo completar la comparación: ${error.message}`, true);
   } finally {
-    ready();
+    if (runId === state.comparisonRun) ready();
   }
 }
 
@@ -476,12 +482,15 @@ function rerenderLastResult() {
   if (!state.lastResult) return;
   try {
     const values = readInputs();
-    const sameData = values.kind === state.lastResult.values.kind
-      && values.start === state.lastResult.values.start
+    const sameData = values.start === state.lastResult.values.start
       && values.end === state.lastResult.values.end
       && values.mode === state.lastResult.values.mode
       && values.baseline === state.lastResult.values.baseline;
-    if (sameData) render(state.lastResult.first, state.lastResult.second, values);
+    if (sameData) {
+      render(state.lastResult.first, state.lastResult.second, values);
+      state.lastResult.values = values;
+      updateComparisonUrl(values);
+    }
     else {
       state.lastResult = null;
       $("comparison").hidden = true;
@@ -530,81 +539,113 @@ function usePhoneCharts() {
   return window.matchMedia("(max-width: 760px)").matches;
 }
 
+function comparisonChartLayout() {
+  const viewport = Math.max(320, document.documentElement.clientWidth || window.innerWidth);
+  const phone = viewport <= 620;
+  const shellWidth = Math.min(1220, viewport - (phone ? 24 : 32));
+  const availableWidth = shellWidth - (phone ? 30 : 46);
+  const width = Math.max(320, Math.min(1060, Math.round(availableWidth)));
+  const height = phone
+    ? Math.max(320, Math.min(360, Math.round(width * .7)))
+    : (viewport <= 950 ? Math.max(360, Math.min(410, Math.round(width * .55))) : 410);
+  return {phone, width, height};
+}
+
+function niceTickScale(dataMinimum, dataMaximum, targetIntervals, absolute) {
+  if (!absolute && Math.abs(dataMaximum - dataMinimum) < Number.EPSILON) {
+    return {minimum: -1, maximum: 1, ticks: [-1, 0, 1]};
+  }
+  const range = Math.max(Number.EPSILON, dataMaximum - dataMinimum);
+  const roughStep = range / targetIntervals;
+  const magnitude = 10 ** Math.floor(Math.log10(roughStep));
+  const fraction = roughStep / magnitude;
+  const niceFraction = fraction <= 1 ? 1 : (fraction <= 2 ? 2 : (fraction <= 5 ? 5 : 10));
+  const step = Math.max(absolute ? 1 : Number.EPSILON, niceFraction * magnitude);
+  let minimum = absolute ? 0 : Math.floor(dataMinimum / step) * step;
+  let maximum = Math.ceil(dataMaximum / step) * step;
+  const epsilon = step / 1000;
+  if (Math.abs(maximum - dataMaximum) < epsilon) maximum += step;
+  if (!absolute && Math.abs(minimum - dataMinimum) < epsilon) minimum -= step;
+  if (maximum <= minimum) maximum = minimum + step;
+  const ticks = [];
+  for (let value = minimum; value <= maximum + epsilon; value += step) {
+    ticks.push(Math.abs(value) < epsilon ? 0 : value);
+  }
+  return {minimum, maximum, ticks};
+}
+
 function signed(value) {
   if (!Number.isFinite(value)) return "—";
   return `${value > 0 ? "+" : ""}${formatNumber(value, Number.isInteger(value) ? 0 : 1)}`;
 }
 
-function render(first, second, values) {
-  const selected = selectedThresholds();
-  if (!selected.length) throw configurationError("Selecciona al menos un umbral visible.", "threshold-main");
-  const {rows, firstBaseline, secondBaseline} = displayRows(first.rows, second.rows, values);
+function comparisonSpec(kind) {
+  return kind === "max"
+    ? {unit: "días", title: "Días", variable: "Tmax", thresholdKey: "maxThreshold"}
+    : {unit: "noches", title: "Noches", variable: "Tmin", thresholdKey: "minThreshold"};
+}
+
+function renderKindComparison(first, second, values, kind) {
+  const spec = comparisonSpec(kind);
+  const threshold = values[spec.thresholdKey];
+  if (!Number.isFinite(threshold)) throw configurationError(`Selecciona un umbral de ${spec.unit} válido.`, thresholdSelectId(kind));
+  const kindValues = {...values, thresholds: [threshold]};
+  const {rows, firstBaseline, secondBaseline} = displayRows(first.rowsByKind[kind], second.rowsByKind[kind], kindValues);
   const common = rows.filter(row => row.rawA && row.rawB);
-  if (!common.length) throw new Error("No hay años completos comunes para las dos ubicaciones en el periodo elegido.");
+  if (!common.length) throw new Error(`No hay años completos comunes para comparar ${spec.unit} en el periodo elegido.`);
 
   const latest = common.at(-1);
-  const base = values.baseThreshold;
-  const rawA = latest.rawA[base];
-  const rawB = latest.rawB[base];
-  const difference = values.mode === "absolute" ? rawA - rawB : latest.a[base] - latest.b[base];
-  const ratio = rawB === 0 ? null : rawA / rawB;
-  const kindLabel = values.kind === "max" ? "Días con Tmax" : "Noches con Tmin";
+  const rawA = latest.rawA[threshold];
+  const rawB = latest.rawB[threshold];
+  const firstValue = values.mode === "absolute" ? rawA : latest.a[threshold];
+  const secondValue = values.mode === "absolute" ? rawB : latest.b[threshold];
+  const difference = firstValue - secondValue;
   const firstName = shortLocationName(state.a);
   const secondName = shortLocationName(state.b);
   const firstNameHtml = escapeHtml(firstName);
   const secondNameHtml = escapeHtml(secondName);
-  const modeLabel = values.mode === "absolute"
-    ? "recuento anual"
-    : `diferencia frente a la mediana ${values.baseline}`;
+  const valueA = values.mode === "absolute" ? formatNumber(firstValue) : signed(firstValue);
+  const valueB = values.mode === "absolute" ? formatNumber(secondValue) : signed(secondValue);
+  const detail = values.mode === "absolute"
+    ? (rawB === 0 ? `${secondNameHtml} no registra superaciones.` : `${firstNameHtml} equivale al ${formatNumber(rawA / rawB * 100)} % de ${secondNameHtml}.`)
+    : `Medianas ${values.baseline}: ${firstNameHtml} ${formatNumber(firstBaseline.medians[threshold], 1)}; ${secondNameHtml} ${formatNumber(secondBaseline.medians[threshold], 1)}.`;
 
-  const firstValue = values.mode === "absolute" ? rawA : latest.a[base];
-  const secondValue = values.mode === "absolute" ? rawB : latest.b[base];
-  const valueSuffix = values.mode === "absolute" ? "" : " días";
-  const metricDetail = values.mode === "absolute"
-    ? `En ${latest.year}`
-    : `En ${latest.year}; referencia: ${formatNumber(firstBaseline.medians[base], 1)}`;
-  const secondMetricDetail = values.mode === "absolute"
-    ? `En ${latest.year}`
-    : `En ${latest.year}; referencia: ${formatNumber(secondBaseline.medians[base], 1)}`;
+  $(`compare-${kind}-title`).textContent = `${spec.title} · ${spec.variable} > ${threshold} °C`;
+  $(`compare-${kind}-subtitle`).textContent = values.mode === "absolute"
+    ? `${firstName} es naranja y ${secondName} azul. El área mezclada es la parte que ambas alcanzan; la parte no solapada muestra la diferencia.`
+    : `${firstName} es naranja y ${secondName} azul. Cero es la mediana propia de cada ciudad en ${values.baseline}; las áreas muestran cuánto queda por encima o por debajo.`;
 
-  $("compare-title").textContent = `${firstName} vs. ${secondName} · ${kindLabel} >${base} °C`;
-  $("compare-subtitle").textContent = values.mode === "absolute"
-    ? `Cada línea muestra el número de superaciones en un año completo. ${firstName} usa línea continua y ${secondName}, discontinua.`
-    : `Cada valor es el recuento anual menos la mediana propia de cada ubicación en ${values.baseline}. ${firstName} usa línea continua y ${secondName}, discontinua; cero representa su clima de referencia.`;
-  $("compare-summary").innerHTML = `
-    <article class="metric">
-      <span class="label">${escapeHtml(locationName(state.a))} · &gt;${base} °C</span>
-      <strong class="value">${values.mode === "absolute" ? formatNumber(firstValue) : signed(firstValue)}${valueSuffix}</strong>
-      <small>${metricDetail}</small>
-    </article>
-    <article class="metric night">
-      <span class="label">${escapeHtml(locationName(state.b))} · &gt;${base} °C</span>
-      <strong class="value">${values.mode === "absolute" ? formatNumber(secondValue) : signed(secondValue)}${valueSuffix}</strong>
-      <small>${secondMetricDetail}</small>
-    </article>
-    <article class="metric">
-      <span class="label">${values.mode === "absolute" ? `Diferencia ${firstNameHtml} − ${secondNameHtml}` : `Diferencia entre anomalías: ${firstNameHtml} − ${secondNameHtml}`} · &gt;${base} °C</span>
-      <strong class="value">${signed(difference)} días</strong>
-      <small>${ratio === null ? `Razón ${firstNameHtml}/${secondNameHtml} no disponible (${secondNameHtml} = 0)` : `El recuento de ${firstNameHtml} equivale al ${formatNumber(ratio * 100)} % del de ${secondNameHtml}`} · ${latest.year}</small>
-    </article>`;
-
-  drawChart(rows, selected, `${firstName} frente a ${secondName} · ${kindLabel}: ${modeLabel}`, values.mode);
-  renderSourceNote(first.meta, second.meta, values, common);
+  drawAreaChart(`compare-${kind}-chart`, rows, threshold, kind, values.mode, values.start, values.end);
+  return {
+    common,
+    card: `<article class="metric comparison-metric">
+      <span class="label">${spec.title} con ${spec.variable} &gt; ${threshold} °C · ${latest.year}${values.mode === "anomaly" ? " · frente a mediana" : ""}</span>
+      <div class="comparison-values">
+        <div class="comparison-city"><span class="city-swatch city-a-swatch" aria-hidden="true"></span><span>${firstNameHtml}</span><strong>${valueA}<span class="unit"> ${spec.unit}</span></strong></div>
+        <div class="comparison-city"><span class="city-swatch city-b-swatch" aria-hidden="true"></span><span>${secondNameHtml}</span><strong>${valueB}<span class="unit"> ${spec.unit}</span></strong></div>
+      </div>
+      <small>Diferencia ${firstNameHtml} − ${secondNameHtml}: ${signed(difference)} ${spec.unit}. ${detail}</small>
+    </article>`
+  };
 }
 
-function renderSourceNote(firstMeta, secondMeta, values, commonRows) {
-  const latestCommon = commonRows.at(-1)?.year;
+function render(first, second, values) {
+  const maxResult = renderKindComparison(first, second, values, "max");
+  const minResult = renderKindComparison(first, second, values, "min");
+  $("compare-summary").innerHTML = maxResult.card + minResult.card;
+  renderSourceNote(first.meta, second.meta, values, maxResult.common, minResult.common);
+}
+
+function renderSourceNote(firstMeta, secondMeta, values, maxCommonRows, minCommonRows) {
+  const latestMax = maxCommonRows.at(-1)?.year;
+  const latestMin = minCommonRows.at(-1)?.year;
   const timezones = firstMeta.timezone === secondMeta.timezone
     ? firstMeta.timezone
     : `${firstMeta.timezone} (${shortLocationName(state.a)}) y ${secondMeta.timezone} (${shortLocationName(state.b)})`;
   const baselineText = values.mode === "anomaly"
     ? ` Las anomalías usan la mediana de ${values.baseline} calculada por separado para cada ubicación.`
     : "";
-  $("compare-source-note").textContent = `Fuente: ERA5 mediante Open-Meteo, en las coordenadas elegidas. Umbrales compartidos ajustados al rango observado de ambas ubicaciones: > ${values.thresholds[0]}–${values.thresholds.at(-1)} °C. Último año completo común mostrado: ${latestCommon ?? "no disponible"}. Zona horaria diaria: ${timezones}.${baselineText} Los umbrales son estrictos: un valor igual al límite no cuenta. La caché dura únicamente esta sesión del navegador.`;
-}
-
-function thresholdColor(index, count) {
-  return `hsl(${index * 250 / Math.max(1, count - 1)},70%,${38 + index * 18 / Math.max(1, count - 1)}%)`;
+  $("compare-source-note").textContent = `Fuente: ERA5 mediante Open-Meteo, en las coordenadas elegidas. Rangos ajustados por separado al clima de ambas ubicaciones: Tmax > ${state.thresholds.max[0]}–${state.thresholds.max.at(-1)} °C y Tmin > ${state.thresholds.min[0]}–${state.thresholds.min.at(-1)} °C. Últimos años completos comunes: ${latestMax ?? "no disponible"} para días y ${latestMin ?? "no disponible"} para noches. Zona horaria diaria: ${timezones}.${baselineText} Los umbrales son estrictos: un valor igual al límite no cuenta. Las dos series se descargan juntas y la caché dura únicamente esta sesión del navegador.`;
 }
 
 function pathFor(rows, side, threshold, x, y) {
@@ -621,50 +662,58 @@ function pathFor(rows, side, threshold, x, y) {
   }).join(" ");
 }
 
-function drawChart(rows, thresholds, label, mode) {
-  const compact = usePhoneCharts();
-  const legendColumns = compact ? 2 : 6;
-  const legendRowHeight = compact ? 20 : 18;
-  const legendRows = Math.ceil(thresholds.length / legendColumns);
-  const width = compact ? 420 : 1060;
-  const height = compact ? 360 + legendRows * legendRowHeight : 460;
+function areaPathFor(rows, side, threshold, x, y, zeroY) {
+  const paths = [];
+  let segment = [];
+  const closeSegment = () => {
+    if (!segment.length) return;
+    const first = segment[0];
+    const last = segment.at(-1);
+    paths.push(`M${x(first.index).toFixed(2)},${zeroY.toFixed(2)} L${segment.map(point => `${x(point.index).toFixed(2)},${y(point.value).toFixed(2)}`).join(" L")} L${x(last.index).toFixed(2)},${zeroY.toFixed(2)} Z`);
+    segment = [];
+  };
+  rows.forEach((row, index) => {
+    const value = row[side]?.[threshold];
+    if (Number.isFinite(value)) segment.push({index, value});
+    else closeSegment();
+  });
+  closeSegment();
+  return paths.join(" ");
+}
+
+function lastFinitePoint(rows, side, threshold) {
+  for (let index = rows.length - 1; index >= 0; index -= 1) {
+    const value = rows[index][side]?.[threshold];
+    if (Number.isFinite(value)) return {index, value, year: rows[index].year};
+  }
+  return null;
+}
+
+function drawAreaChart(id, rows, threshold, kind, mode, startYear, endYear) {
+  const layout = comparisonChartLayout();
+  const compact = layout.phone;
+  const {width, height} = layout;
   const padding = compact
-    ? {left: 48, right: 14, top: 44 + legendRows * legendRowHeight, bottom: 44}
-    : {left: 58, right: 20, top: 55 + legendRows * legendRowHeight, bottom: 48};
-  const values = rows.flatMap(row => thresholds.flatMap(threshold => [row.a?.[threshold], row.b?.[threshold]]))
+    ? {left: 48, right: 14, top: 68, bottom: 44}
+    : {left: 58, right: 20, top: 62, bottom: 48};
+  const values = rows.flatMap(row => [row.a?.[threshold], row.b?.[threshold]])
     .filter(Number.isFinite);
-  let minimum = mode === "absolute" ? 0 : Math.min(0, ...values);
-  let maximum = Math.max(mode === "absolute" ? 1 : 0, ...values);
-  if (minimum === maximum) maximum = minimum + 1;
-  const span = maximum - minimum;
-  minimum = mode === "absolute" ? 0 : Math.floor(minimum - span * 0.06);
-  maximum = Math.ceil(maximum + span * 0.06);
+  if (!values.length) throw new Error("No hay valores suficientes para dibujar la comparación.");
+  const dataMinimum = mode === "absolute" ? 0 : Math.min(0, ...values);
+  const dataMaximum = Math.max(mode === "absolute" ? 1 : 0, ...values);
+  const scale = niceTickScale(dataMinimum, dataMaximum, compact || width < 700 ? 4 : 5, mode === "absolute");
+  const {minimum, maximum} = scale;
 
   const x = index => padding.left + index * (width - padding.left - padding.right) / Math.max(1, rows.length - 1);
   const y = value => height - padding.bottom - (value - minimum) * (height - padding.top - padding.bottom) / Math.max(1, maximum - minimum);
   let grid = "";
-  const tickCount = compact ? 4 : 5;
-  for (let index = 0; index <= tickCount; index += 1) {
-    const value = minimum + (maximum - minimum) * index / tickCount;
+  scale.ticks.forEach(value => {
     const yy = y(value);
     grid += `<line class="grid" x1="${padding.left}" x2="${width - padding.right}" y1="${yy}" y2="${yy}"${Math.abs(value) < (maximum - minimum) / 100 ? ' style="stroke:#7f8c84;stroke-width:1.5"' : ""}/>`;
     grid += `<text class="axis" x="${padding.left - 8}" y="${yy + 4}" text-anchor="end">${formatNumber(value, Math.abs(value) < 10 && !Number.isInteger(value) ? 1 : 0)}</text>`;
-  }
-
-  let series = "";
-  let legend = "";
-  thresholds.forEach((threshold, index) => {
-    const color = thresholdColor(index, thresholds.length);
-    const firstPath = pathFor(rows, "a", threshold, x, y);
-    const secondPath = pathFor(rows, "b", threshold, x, y);
-    series += `<path class="compare-a" d="${firstPath}" style="fill:none;stroke:${color};stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round"><title>${escapeHtml(locationName(state.a))}: >${threshold} °C</title></path>`;
-    series += `<path class="compare-b" d="${secondPath}" style="fill:none;stroke:${color};stroke-width:2.5;stroke-dasharray:8 5;stroke-linecap:round;stroke-linejoin:round"><title>${escapeHtml(locationName(state.b))}: >${threshold} °C</title></path>`;
-    const legendX = padding.left + (index % legendColumns) * (compact ? 175 : 155);
-    const legendY = 22 + Math.floor(index / legendColumns) * legendRowHeight;
-    legend += `<line x1="${legendX}" x2="${legendX + 22}" y1="${legendY}" y2="${legendY}" style="stroke:${color};stroke-width:3"/><text class="legend" x="${legendX + 28}" y="${legendY + 4}">&gt;${threshold} °C</text>`;
   });
 
-  const labelEvery = Math.max(1, Math.ceil(rows.length / (compact ? 4 : 8)));
+  const labelEvery = Math.max(1, Math.ceil(rows.length / (compact ? 4 : (width < 700 ? 6 : 8))));
   const yearLabels = rows.map((row, index) => {
     if (index !== 0 && index !== rows.length - 1 && index % labelEvery !== 0) return "";
     const anchor = index === rows.length - 1 ? "end" : "middle";
@@ -674,20 +723,35 @@ function drawChart(rows, thresholds, label, mode) {
     ? `<line x1="${padding.left}" x2="${width - padding.right}" y1="${y(0)}" y2="${y(0)}" style="stroke:#7f8c84;stroke-width:1.5"/><text class="legend" x="${padding.left + 8}" y="${y(0) - 7}">mediana de referencia</text>`
     : "";
 
-  const firstLegendX = compact ? padding.left : width - 330;
-  const secondLegendX = compact ? Math.floor(width / 2) + 4 : width - 205;
-  const stationLegendY = padding.top - 16;
+  const firstPath = pathFor(rows, "a", threshold, x, y);
+  const secondPath = pathFor(rows, "b", threshold, x, y);
+  const firstArea = areaPathFor(rows, "a", threshold, x, y, y(0));
+  const secondArea = areaPathFor(rows, "b", threshold, x, y, y(0));
+  const firstPoint = lastFinitePoint(rows, "a", threshold);
+  const secondPoint = lastFinitePoint(rows, "b", threshold);
+  const firstLegendX = padding.left;
+  const secondLegendX = compact ? Math.floor(width / 2) + 4 : padding.left + 250;
   const firstLegendName = escapeHtml(chartLocationName(state.a, compact ? 18 : 32));
   const secondLegendName = escapeHtml(chartLocationName(state.b, compact ? 18 : 32));
+  const spec = comparisonSpec(kind);
+  const modeDescription = mode === "absolute" ? "recuento anual" : `diferencia respecto a la mediana ${$("compare-baseline").value}`;
+  const firstMarker = firstPoint ? `<circle class="compare-area-point compare-city-a-point" cx="${x(firstPoint.index)}" cy="${y(firstPoint.value)}" r="4"><title>${firstPoint.year}: ${formatNumber(firstPoint.value, Number.isInteger(firstPoint.value) ? 0 : 1)} ${spec.unit}</title></circle>` : "";
+  const secondMarker = secondPoint ? `<circle class="compare-area-point compare-city-b-point" cx="${x(secondPoint.index)}" cy="${y(secondPoint.value)}" r="4"><title>${secondPoint.year}: ${formatNumber(secondPoint.value, Number.isInteger(secondPoint.value) ? 0 : 1)} ${spec.unit}</title></circle>` : "";
 
-  $("compare-chart").innerHTML = `<svg viewBox="0 0 ${width} ${height}" role="img" aria-labelledby="compare-svg-title compare-svg-desc">
-    <title id="compare-svg-title">${escapeHtml(label)}</title>
-    <desc id="compare-svg-desc">Líneas continuas para ${escapeHtml(locationName(state.a))}; líneas discontinuas para ${escapeHtml(locationName(state.b))}.</desc>
-    ${grid}${zeroLabel}${series}${legend}${yearLabels}
-    <line x1="${firstLegendX}" x2="${firstLegendX + 30}" y1="${stationLegendY}" y2="${stationLegendY}" style="stroke:#405249;stroke-width:2.5"/>
-    <text class="legend" x="${firstLegendX + 36}" y="${stationLegendY + 4}">${firstLegendName}</text>
-    <line x1="${secondLegendX}" x2="${secondLegendX + 30}" y1="${stationLegendY}" y2="${stationLegendY}" style="stroke:#405249;stroke-width:2.5;stroke-dasharray:8 5"/>
-    <text class="legend" x="${secondLegendX + 36}" y="${stationLegendY + 4}">${secondLegendName}</text>
+  $(id).innerHTML = `<svg viewBox="0 0 ${width} ${height}" role="img" aria-labelledby="${kind}-svg-title ${kind}-svg-desc">
+    <title id="${kind}-svg-title">${spec.title} con ${spec.variable} &gt; ${threshold} °C: ${escapeHtml(shortLocationName(state.a))} frente a ${escapeHtml(shortLocationName(state.b))}</title>
+    <desc id="${kind}-svg-desc">Superficies anuales superpuestas de ${escapeHtml(locationName(state.a))}, naranja con borde continuo, y ${escapeHtml(locationName(state.b))}, azul con borde discontinuo, entre ${startYear} y ${endYear}; ${modeDescription}.</desc>
+    ${grid}
+    <g class="compare-area-layer">
+      <path class="compare-area compare-city-a-area" d="${firstArea}"><title>${escapeHtml(locationName(state.a))}: ${spec.unit} con ${spec.variable} &gt; ${threshold} °C</title></path>
+      <path class="compare-area compare-city-b-area" d="${secondArea}"><title>${escapeHtml(locationName(state.b))}: ${spec.unit} con ${spec.variable} &gt; ${threshold} °C</title></path>
+    </g>
+    ${zeroLabel}
+    <path class="compare-area-outline compare-city-a-outline" d="${firstPath}"/>
+    <path class="compare-area-outline compare-city-b-outline" d="${secondPath}"/>
+    ${firstMarker}${secondMarker}${yearLabels}
+    <rect class="area-legend-swatch compare-city-a-area" x="${firstLegendX}" y="18" width="22" height="12"/><line class="compare-area-outline compare-city-a-outline" x1="${firstLegendX}" x2="${firstLegendX + 22}" y1="24" y2="24"/><text class="legend" x="${firstLegendX + 29}" y="29">${firstLegendName}</text>
+    <rect class="area-legend-swatch compare-city-b-area" x="${secondLegendX}" y="18" width="22" height="12"/><line class="compare-area-outline compare-city-b-outline" x1="${secondLegendX}" x2="${secondLegendX + 22}" y1="24" y2="24"/><text class="legend" x="${secondLegendX + 29}" y="29">${secondLegendName}</text>
   </svg>`;
 }
 
@@ -696,31 +760,19 @@ $("station-b").oninput = () => queueSearch("b");
 $("station-a").onkeydown = event => { if (event.key === "Enter") search("a"); };
 $("station-b").onkeydown = event => { if (event.key === "Enter") search("b"); };
 $("compare-button").onclick = compare;
-$("compare-kind").onchange = () => {
-  state.pendingBase = null;
-  resetThresholdControls();
-  state.lastResult = null;
-  $("comparison").hidden = true;
-  if (state.a && state.b) setStatus("La serie cambió. Pulsa Comparar para descargarla.");
-};
 $("compare-mode").onchange = updateModeControls;
 $("compare-baseline").onchange = rerenderLastResult;
-$("compare-base").onchange = () => {
-  const selected = $("threshold-controls").querySelector(`input[value="${$("compare-base").value}"]`);
-  if (selected) selected.checked = true;
-  rerenderLastResult();
-};
+$("compare-max-threshold").onchange = rerenderLastResult;
+$("compare-min-threshold").onchange = rerenderLastResult;
 function comparisonPeriodChanged() {
   state.lastResult = null;
   $("comparison").hidden = true;
-  resetThresholdControls();
+  state.pendingThresholds = {max: null, min: null};
+  resetThresholdSelectors();
   if (state.a && state.b) setStatus("El periodo cambió. Pulsa Comparar para recalcular los umbrales.");
 }
 $("compare-start").onchange = comparisonPeriodChanged;
 $("compare-end").onchange = comparisonPeriodChanged;
-$("threshold-main").onclick = () => setThresholdPreset("main");
-$("threshold-all").onclick = () => setThresholdPreset("all");
-$("threshold-none").onclick = () => setThresholdPreset("base");
 
 function restoreQuery() {
   const params = new URLSearchParams(location.search);
@@ -732,23 +784,29 @@ function restoreQuery() {
   const lonB = hasB ? Number(params.get("lonB")) : NaN;
   if (Number.isFinite(latA) && Number.isFinite(lonA)) choose("a", {name: params.get("nameA") || `${latA.toFixed(3)} / ${lonA.toFixed(3)}`, latitude: latA, longitude: lonA, timezone: params.get("tzA") || "auto"});
   if (Number.isFinite(latB) && Number.isFinite(lonB)) choose("b", {name: params.get("nameB") || `${latB.toFixed(3)} / ${lonB.toFixed(3)}`, latitude: latB, longitude: lonB, timezone: params.get("tzB") || "auto"});
-  [["compare-start", "start"], ["compare-end", "end"], ["compare-kind", "kind"], ["compare-mode", "mode"], ["compare-baseline", "baseline"]].forEach(([id, key]) => { if (params.has(key)) $(id).value = params.get(key); });
-  state.pendingBase = params.has("base") && Number.isFinite(Number(params.get("base"))) ? Number(params.get("base")) : null;
-  resetThresholdControls();
+  [["compare-start", "start"], ["compare-end", "end"]].forEach(([id, key]) => { if (params.has(key)) $(id).value = params.get(key); });
+  [["compare-mode", "mode"], ["compare-baseline", "baseline"]].forEach(([id, key]) => {
+    const requested = params.get(key);
+    if (requested && [...$(id).options].some(option => option.value === requested)) $(id).value = requested;
+  });
+  const legacyBase = params.has("base") ? Number(params.get("base")) : NaN;
+  const requestedMax = params.has("baseMax") ? Number(params.get("baseMax")) : NaN;
+  const requestedMin = params.has("baseMin") ? Number(params.get("baseMin")) : NaN;
+  state.pendingThresholds = {
+    max: Number.isFinite(requestedMax) ? requestedMax : (params.get("kind") !== "min" && Number.isFinite(legacyBase) ? legacyBase : null),
+    min: Number.isFinite(requestedMin) ? requestedMin : (params.get("kind") === "min" && Number.isFinite(legacyBase) ? legacyBase : null)
+  };
+  resetThresholdSelectors();
   updateModeControls();
   if (params.get("run") === "1" && state.a && state.b) setTimeout(compare, 0);
   return Boolean(state.a || state.b);
 }
 
-resetThresholdControls();
+resetThresholdSelectors();
 if (!restoreQuery()) { queueSearch("a"); queueSearch("b"); }
 
-let lastCompactChartLayout = usePhoneCharts();
 let chartResizeTimer = null;
 window.addEventListener("resize", () => {
-  const compact = usePhoneCharts();
-  if (compact === lastCompactChartLayout) return;
-  lastCompactChartLayout = compact;
   clearTimeout(chartResizeTimer);
   chartResizeTimer = setTimeout(() => {
     if (state.lastResult && !$("comparison").hidden) rerenderLastResult();
