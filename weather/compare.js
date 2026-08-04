@@ -1,6 +1,8 @@
 const $ = id => document.getElementById(id);
 const YEAR_NOW = new Date().getFullYear();
 const CANDIDATE_THRESHOLDS = Array.from({length: 121}, (_, index) => index - 60);
+const BAND_HALF_WIDTH = 5;
+const BAND_CENTER_THRESHOLDS = CANDIDATE_THRESHOLDS.slice(BAND_HALF_WIDTH, -BAND_HALF_WIDTH);
 const MIN_THRESHOLD_LINES = 5;
 const MAX_THRESHOLD_LINES = 9;
 const SOURCE = "era5-open-meteo";
@@ -113,6 +115,10 @@ function automaticThreshold(thresholds) {
   return thresholds.find(value => value % 5 === 0) ?? thresholds[Math.floor(thresholds.length / 2)];
 }
 
+function temperatureBand(threshold) {
+  return {lower: threshold - BAND_HALF_WIDTH, center: threshold, upper: threshold + BAND_HALF_WIDTH};
+}
+
 function thresholdSelectId(kind) {
   return kind === "max" ? "compare-max-threshold" : "compare-min-threshold";
 }
@@ -133,7 +139,10 @@ function populateThresholdSelector(kind, preferredThreshold = null) {
   const previous = Number($(thresholdSelectId(kind)).value);
   const selected = [preferredThreshold, previous, automatic]
     .find(value => Number.isFinite(value) && thresholds.includes(value)) ?? automatic;
-  const options = thresholds.map(value => new Option(`>${value} °C${value === automatic ? " · automático" : ""}`, value));
+  const options = thresholds.map(value => {
+    const band = temperatureBand(value);
+    return new Option(`${value} °C · área ${band.lower}–${band.upper} °C${value === automatic ? " · automático" : ""}`, value);
+  });
   const select = $(thresholdSelectId(kind));
   select.replaceChildren(...options);
   select.value = String(selected);
@@ -380,12 +389,12 @@ function adaptiveComparisonThresholds(firstRows, secondRows, values, kind) {
   const totalDays = rows.reduce((sum, row) => sum + row.days, 0);
   if (!totalDays) throw new Error(`No hay temperaturas suficientes para ajustar los umbrales de ${kind === "max" ? "días" : "noches"}.`);
   const exceedances = threshold => rows.reduce((sum, row) => sum + (row.counts[threshold] || 0), 0);
-  const highest = [...CANDIDATE_THRESHOLDS].reverse().find(threshold => exceedances(threshold) > 0);
+  const highest = [...BAND_CENTER_THRESHOLDS].reverse().find(threshold => exceedances(threshold) > 0);
   if (!Number.isFinite(highest)) throw new Error("El rango de temperaturas queda fuera de los límites disponibles.");
-  const climateStart = CANDIDATE_THRESHOLDS.find(threshold => exceedances(threshold) <= totalDays * 0.1) ?? highest;
+  const climateStart = BAND_CENTER_THRESHOLDS.find(threshold => exceedances(threshold) <= totalDays * 0.1) ?? highest;
   let lowest = Math.max(climateStart, highest - (MAX_THRESHOLD_LINES - 1));
   lowest = Math.min(lowest, highest - (MIN_THRESHOLD_LINES - 1));
-  lowest = Math.max(lowest, CANDIDATE_THRESHOLDS[0]);
+  lowest = Math.max(lowest, BAND_CENTER_THRESHOLDS[0]);
   return Array.from({length: highest - lowest + 1}, (_, index) => lowest + index);
 }
 
@@ -505,9 +514,7 @@ function rerenderLastResult() {
 function displayRows(firstRows, secondRows, values) {
   const firstMap = new Map(firstRows.map(row => [row.year, row]));
   const secondMap = new Map(secondRows.map(row => [row.year, row]));
-  const years = [...new Set([...firstMap.keys(), ...secondMap.keys()])]
-    .filter(year => year >= values.start && year <= values.end)
-    .sort((a, b) => a - b);
+  const years = Array.from({length: values.end - values.start + 1}, (_, index) => values.start + index);
   const firstBaseline = baselineMedians(firstRows, values);
   const secondBaseline = baselineMedians(secondRows, values);
 
@@ -522,8 +529,14 @@ function displayRows(firstRows, secondRows, values) {
 
     return {
       year,
-      a: first && Object.fromEntries(values.thresholds.map(threshold => [threshold, first[threshold] - firstBaseline.medians[threshold]])),
-      b: second && Object.fromEntries(values.thresholds.map(threshold => [threshold, second[threshold] - secondBaseline.medians[threshold]])),
+      a: first && Object.fromEntries(values.thresholds.map(threshold => [
+        threshold,
+        first[threshold] - firstBaseline.medians[values.anomalyReferenceThreshold ?? threshold]
+      ])),
+      b: second && Object.fromEntries(values.thresholds.map(threshold => [
+        threshold,
+        second[threshold] - secondBaseline.medians[values.anomalyReferenceThreshold ?? threshold]
+      ])),
       rawA: first,
       rawB: second
     };
@@ -545,10 +558,12 @@ function comparisonChartLayout() {
   const shellWidth = Math.min(1220, viewport - (phone ? 24 : 32));
   const availableWidth = shellWidth - (phone ? 30 : 46);
   const width = Math.max(320, Math.min(1060, Math.round(availableWidth)));
-  const height = phone
+  const stackLegend = phone && width < 376;
+  let height = phone
     ? Math.max(320, Math.min(360, Math.round(width * .7)))
     : (viewport <= 950 ? Math.max(360, Math.min(410, Math.round(width * .55))) : 410);
-  return {phone, width, height};
+  if (stackLegend) height = Math.max(height, 340);
+  return {phone, stackLegend, width, height};
 }
 
 function niceTickScale(dataMinimum, dataMaximum, targetIntervals, absolute) {
@@ -589,7 +604,12 @@ function renderKindComparison(first, second, values, kind) {
   const spec = comparisonSpec(kind);
   const threshold = values[spec.thresholdKey];
   if (!Number.isFinite(threshold)) throw configurationError(`Selecciona un umbral de ${spec.unit} válido.`, thresholdSelectId(kind));
-  const kindValues = {...values, thresholds: [threshold]};
+  const band = temperatureBand(threshold);
+  const kindValues = {
+    ...values,
+    thresholds: [band.lower, band.center, band.upper],
+    anomalyReferenceThreshold: band.center
+  };
   const {rows, firstBaseline, secondBaseline} = displayRows(first.rowsByKind[kind], second.rowsByKind[kind], kindValues);
   const common = rows.filter(row => row.rawA && row.rawB);
   if (!common.length) throw new Error(`No hay años completos comunes para comparar ${spec.unit} en el periodo elegido.`);
@@ -610,21 +630,22 @@ function renderKindComparison(first, second, values, kind) {
     ? (rawB === 0 ? `${secondNameHtml} no registra superaciones.` : `${firstNameHtml} equivale al ${formatNumber(rawA / rawB * 100)} % de ${secondNameHtml}.`)
     : `Medianas ${values.baseline}: ${firstNameHtml} ${formatNumber(firstBaseline.medians[threshold], 1)}; ${secondNameHtml} ${formatNumber(secondBaseline.medians[threshold], 1)}.`;
 
-  $(`compare-${kind}-title`).textContent = `${spec.title} · ${spec.variable} > ${threshold} °C`;
+  $(`compare-${kind}-title`).textContent = `${spec.title} con ${spec.variable} > ${threshold} °C`;
   $(`compare-${kind}-subtitle`).textContent = values.mode === "absolute"
-    ? `${firstName} es naranja y ${secondName} azul. El área mezclada es la parte que ambas alcanzan; la parte no solapada muestra la diferencia.`
-    : `${firstName} es naranja y ${secondName} azul. Cero es la mediana propia de cada ciudad en ${values.baseline}; las áreas muestran cuánto queda por encima o por debajo.`;
+    ? `La raya muestra el recuento anual sobre ${threshold} °C. La superficie queda entre los recuentos sobre ${band.lower} °C y ${band.upper} °C: compara umbrales, no representa incertidumbre. ${firstName} es naranja y ${secondName} azul.`
+    : `La raya muestra la diferencia del recuento > ${threshold} °C frente a su mediana ${values.baseline}. La superficie aplica esa misma referencia central a > ${band.lower} °C y > ${band.upper} °C: compara umbrales, no incertidumbre. ${firstName} es naranja y ${secondName} azul.`;
 
-  drawAreaChart(`compare-${kind}-chart`, rows, threshold, kind, values.mode, values.start, values.end);
+  drawTemperatureBandChart(`compare-${kind}-chart`, rows, band, kind, values.mode, values.start, values.end);
   return {
     common,
+    band,
     card: `<article class="metric comparison-metric">
-      <span class="label">${spec.title} con ${spec.variable} &gt; ${threshold} °C · ${latest.year}${values.mode === "anomaly" ? " · frente a mediana" : ""}</span>
+      <span class="label">${spec.title} · raya ${spec.variable} &gt; ${threshold} °C · área ${band.lower}–${band.upper} °C · ${latest.year}${values.mode === "anomaly" ? " · frente a mediana" : ""}</span>
       <div class="comparison-values">
         <div class="comparison-city"><span class="city-swatch city-a-swatch" aria-hidden="true"></span><span>${firstNameHtml}</span><strong>${valueA}<span class="unit"> ${spec.unit}</span></strong></div>
         <div class="comparison-city"><span class="city-swatch city-b-swatch" aria-hidden="true"></span><span>${secondNameHtml}</span><strong>${valueB}<span class="unit"> ${spec.unit}</span></strong></div>
       </div>
-      <small>Diferencia ${firstNameHtml} − ${secondNameHtml}: ${signed(difference)} ${spec.unit}. ${detail}</small>
+      <small>Diferencia ${firstNameHtml} − ${secondNameHtml}: ${signed(difference)} ${spec.unit}. ${detail} Valores de la raya central; superficie entre &gt; ${band.lower} °C y &gt; ${band.upper} °C.</small>
     </article>`
   };
 }
@@ -643,9 +664,11 @@ function renderSourceNote(firstMeta, secondMeta, values, maxCommonRows, minCommo
     ? firstMeta.timezone
     : `${firstMeta.timezone} (${shortLocationName(state.a)}) y ${secondMeta.timezone} (${shortLocationName(state.b)})`;
   const baselineText = values.mode === "anomaly"
-    ? ` Las anomalías usan la mediana de ${values.baseline} calculada por separado para cada ubicación.`
+    ? ` Las anomalías restan la mediana ${values.baseline} del umbral central, calculada por separado para cada ubicación.`
     : "";
-  $("compare-source-note").textContent = `Fuente: ERA5 mediante Open-Meteo, en las coordenadas elegidas. Rangos ajustados por separado al clima de ambas ubicaciones: Tmax > ${state.thresholds.max[0]}–${state.thresholds.max.at(-1)} °C y Tmin > ${state.thresholds.min[0]}–${state.thresholds.min.at(-1)} °C. Últimos años completos comunes: ${latestMax ?? "no disponible"} para días y ${latestMin ?? "no disponible"} para noches. Zona horaria diaria: ${timezones}.${baselineText} Los umbrales son estrictos: un valor igual al límite no cuenta. Las dos series se descargan juntas y la caché dura únicamente esta sesión del navegador.`;
+  const maxBand = temperatureBand(values.maxThreshold);
+  const minBand = temperatureBand(values.minThreshold);
+  $("compare-source-note").textContent = `Fuente: ERA5 mediante Open-Meteo, en las coordenadas elegidas. Superficies mostradas: Tmax ${maxBand.lower}–${maxBand.upper} °C con raya > ${maxBand.center} °C, y Tmin ${minBand.lower}–${minBand.upper} °C con raya > ${minBand.center} °C. Las temperaturas centrales se ajustan al clima de ambas ubicaciones. Las superficies muestran sensibilidad al umbral, no incertidumbre; que se solapen significa que coinciden sus rangos de recuentos, no necesariamente los mismos días. Últimos años completos comunes: ${latestMax ?? "no disponible"} para días y ${latestMin ?? "no disponible"} para noches. Zona horaria diaria: ${timezones}.${baselineText} Los umbrales son estrictos: un valor igual al límite no cuenta. Las dos series se descargan juntas y la caché dura únicamente esta sesión del navegador.`;
 }
 
 function pathFor(rows, side, threshold, x, y) {
@@ -662,19 +685,21 @@ function pathFor(rows, side, threshold, x, y) {
   }).join(" ");
 }
 
-function areaPathFor(rows, side, threshold, x, y, zeroY) {
+function bandPathFor(rows, side, lowerThreshold, upperThreshold, x, y) {
   const paths = [];
   let segment = [];
   const closeSegment = () => {
     if (!segment.length) return;
-    const first = segment[0];
-    const last = segment.at(-1);
-    paths.push(`M${x(first.index).toFixed(2)},${zeroY.toFixed(2)} L${segment.map(point => `${x(point.index).toFixed(2)},${y(point.value).toFixed(2)}`).join(" L")} L${x(last.index).toFixed(2)},${zeroY.toFixed(2)} Z`);
+    const upperCurve = segment.map(point => `${x(point.index).toFixed(2)},${y(Math.max(point.lowerValue, point.upperValue)).toFixed(2)}`);
+    const lowerCurve = [...segment].reverse().map(point => `${x(point.index).toFixed(2)},${y(Math.min(point.lowerValue, point.upperValue)).toFixed(2)}`);
+    paths.push(`M${upperCurve.join(" L")} L${lowerCurve.join(" L")} Z`);
     segment = [];
   };
   rows.forEach((row, index) => {
-    const value = row[side]?.[threshold];
-    if (Number.isFinite(value)) segment.push({index, value});
+    if (segment.length && row.year !== segment.at(-1).year + 1) closeSegment();
+    const lowerValue = row[side]?.[lowerThreshold];
+    const upperValue = row[side]?.[upperThreshold];
+    if (Number.isFinite(lowerValue) && Number.isFinite(upperValue)) segment.push({index, year: row.year, lowerValue, upperValue});
     else closeSegment();
   });
   closeSegment();
@@ -689,14 +714,15 @@ function lastFinitePoint(rows, side, threshold) {
   return null;
 }
 
-function drawAreaChart(id, rows, threshold, kind, mode, startYear, endYear) {
+function drawTemperatureBandChart(id, rows, band, kind, mode, startYear, endYear) {
   const layout = comparisonChartLayout();
   const compact = layout.phone;
   const {width, height} = layout;
   const padding = compact
-    ? {left: 48, right: 14, top: 68, bottom: 44}
+    ? {left: 48, right: 14, top: layout.stackLegend ? 92 : 68, bottom: 44}
     : {left: 58, right: 20, top: 62, bottom: 48};
-  const values = rows.flatMap(row => [row.a?.[threshold], row.b?.[threshold]])
+  const thresholds = [band.lower, band.center, band.upper];
+  const values = rows.flatMap(row => thresholds.flatMap(threshold => [row.a?.[threshold], row.b?.[threshold]]))
     .filter(Number.isFinite);
   if (!values.length) throw new Error("No hay valores suficientes para dibujar la comparación.");
   const dataMinimum = mode === "absolute" ? 0 : Math.min(0, ...values);
@@ -723,35 +749,40 @@ function drawAreaChart(id, rows, threshold, kind, mode, startYear, endYear) {
     ? `<line x1="${padding.left}" x2="${width - padding.right}" y1="${y(0)}" y2="${y(0)}" style="stroke:#7f8c84;stroke-width:1.5"/><text class="legend" x="${padding.left + 8}" y="${y(0) - 7}">mediana de referencia</text>`
     : "";
 
-  const firstPath = pathFor(rows, "a", threshold, x, y);
-  const secondPath = pathFor(rows, "b", threshold, x, y);
-  const firstArea = areaPathFor(rows, "a", threshold, x, y, y(0));
-  const secondArea = areaPathFor(rows, "b", threshold, x, y, y(0));
-  const firstPoint = lastFinitePoint(rows, "a", threshold);
-  const secondPoint = lastFinitePoint(rows, "b", threshold);
+  const firstPath = pathFor(rows, "a", band.center, x, y);
+  const secondPath = pathFor(rows, "b", band.center, x, y);
+  const firstArea = bandPathFor(rows, "a", band.lower, band.upper, x, y);
+  const secondArea = bandPathFor(rows, "b", band.lower, band.upper, x, y);
+  const firstPoint = lastFinitePoint(rows, "a", band.center);
+  const secondPoint = lastFinitePoint(rows, "b", band.center);
   const firstLegendX = padding.left;
-  const secondLegendX = compact ? Math.floor(width / 2) + 4 : padding.left + 250;
+  const secondLegendX = layout.stackLegend ? padding.left : (compact ? Math.floor(width / 2) + 4 : padding.left + 250);
+  const firstLegendY = 18;
+  const secondLegendY = layout.stackLegend ? 45 : 18;
   const firstLegendName = escapeHtml(chartLocationName(state.a, compact ? 18 : 32));
   const secondLegendName = escapeHtml(chartLocationName(state.b, compact ? 18 : 32));
   const spec = comparisonSpec(kind);
   const modeDescription = mode === "absolute" ? "recuento anual" : `diferencia respecto a la mediana ${$("compare-baseline").value}`;
-  const firstMarker = firstPoint ? `<circle class="compare-area-point compare-city-a-point" cx="${x(firstPoint.index)}" cy="${y(firstPoint.value)}" r="4"><title>${firstPoint.year}: ${formatNumber(firstPoint.value, Number.isInteger(firstPoint.value) ? 0 : 1)} ${spec.unit}</title></circle>` : "";
-  const secondMarker = secondPoint ? `<circle class="compare-area-point compare-city-b-point" cx="${x(secondPoint.index)}" cy="${y(secondPoint.value)}" r="4"><title>${secondPoint.year}: ${formatNumber(secondPoint.value, Number.isInteger(secondPoint.value) ? 0 : 1)} ${spec.unit}</title></circle>` : "";
+  const bandDescription = mode === "absolute"
+    ? `la superficie une el recuento que supera ${band.lower} °C con el que supera ${band.upper} °C`
+    : `la superficie aplica la mediana del umbral central a los recuentos que superan ${band.lower} °C y ${band.upper} °C`;
+  const firstMarker = firstPoint ? `<circle class="compare-area-point compare-city-a-point" cx="${x(firstPoint.index)}" cy="${y(firstPoint.value)}" r="4"><title>${firstPoint.year}: ${formatNumber(firstPoint.value, Number.isInteger(firstPoint.value) ? 0 : 1)} ${spec.unit} &gt; ${band.center} °C</title></circle>` : "";
+  const secondMarker = secondPoint ? `<circle class="compare-area-point compare-city-b-point" cx="${x(secondPoint.index)}" cy="${y(secondPoint.value)}" r="4"><title>${secondPoint.year}: ${formatNumber(secondPoint.value, Number.isInteger(secondPoint.value) ? 0 : 1)} ${spec.unit} &gt; ${band.center} °C</title></circle>` : "";
 
   $(id).innerHTML = `<svg viewBox="0 0 ${width} ${height}" role="img" aria-labelledby="${kind}-svg-title ${kind}-svg-desc">
-    <title id="${kind}-svg-title">${spec.title} con ${spec.variable} &gt; ${threshold} °C: ${escapeHtml(shortLocationName(state.a))} frente a ${escapeHtml(shortLocationName(state.b))}</title>
-    <desc id="${kind}-svg-desc">Superficies anuales superpuestas de ${escapeHtml(locationName(state.a))}, naranja con borde continuo, y ${escapeHtml(locationName(state.b))}, azul con borde discontinuo, entre ${startYear} y ${endYear}; ${modeDescription}.</desc>
+    <title id="${kind}-svg-title">${spec.title}: áreas ${spec.variable} ${band.lower}–${band.upper} °C y rayas &gt; ${band.center} °C; ${escapeHtml(shortLocationName(state.a))} frente a ${escapeHtml(shortLocationName(state.b))}</title>
+    <desc id="${kind}-svg-desc">En ${modeDescription}, ${bandDescription}; la raya representa las superaciones de ${band.center} °C. Es una banda de sensibilidad al umbral, no de incertidumbre. ${escapeHtml(locationName(state.a))} aparece en naranja con raya continua y ${escapeHtml(locationName(state.b))} en azul con raya discontinua, entre ${startYear} y ${endYear}.</desc>
     ${grid}
     <g class="compare-area-layer">
-      <path class="compare-area compare-city-a-area" d="${firstArea}"><title>${escapeHtml(locationName(state.a))}: ${spec.unit} con ${spec.variable} &gt; ${threshold} °C</title></path>
-      <path class="compare-area compare-city-b-area" d="${secondArea}"><title>${escapeHtml(locationName(state.b))}: ${spec.unit} con ${spec.variable} &gt; ${threshold} °C</title></path>
+      <path class="compare-area compare-temperature-band compare-city-a-area" d="${firstArea}"><title>${escapeHtml(locationName(state.a))}: área entre ${spec.variable} &gt; ${band.lower} °C y &gt; ${band.upper} °C</title></path>
+      <path class="compare-area compare-temperature-band compare-city-b-area" d="${secondArea}"><title>${escapeHtml(locationName(state.b))}: área entre ${spec.variable} &gt; ${band.lower} °C y &gt; ${band.upper} °C</title></path>
     </g>
     ${zeroLabel}
-    <path class="compare-area-outline compare-city-a-outline" d="${firstPath}"/>
-    <path class="compare-area-outline compare-city-b-outline" d="${secondPath}"/>
+    <path class="compare-area-outline compare-central-line compare-city-a-outline" d="${firstPath}"><title>${escapeHtml(locationName(state.a))}: raya ${spec.variable} &gt; ${band.center} °C</title></path>
+    <path class="compare-area-outline compare-central-line compare-city-b-outline" d="${secondPath}"><title>${escapeHtml(locationName(state.b))}: raya ${spec.variable} &gt; ${band.center} °C</title></path>
     ${firstMarker}${secondMarker}${yearLabels}
-    <rect class="area-legend-swatch compare-city-a-area" x="${firstLegendX}" y="18" width="22" height="12"/><line class="compare-area-outline compare-city-a-outline" x1="${firstLegendX}" x2="${firstLegendX + 22}" y1="24" y2="24"/><text class="legend" x="${firstLegendX + 29}" y="29">${firstLegendName}</text>
-    <rect class="area-legend-swatch compare-city-b-area" x="${secondLegendX}" y="18" width="22" height="12"/><line class="compare-area-outline compare-city-b-outline" x1="${secondLegendX}" x2="${secondLegendX + 22}" y1="24" y2="24"/><text class="legend" x="${secondLegendX + 29}" y="29">${secondLegendName}</text>
+    <rect class="area-legend-swatch compare-city-a-area" x="${firstLegendX}" y="${firstLegendY}" width="22" height="12"/><line class="compare-area-outline compare-city-a-outline" x1="${firstLegendX}" x2="${firstLegendX + 22}" y1="${firstLegendY + 6}" y2="${firstLegendY + 6}"/><text class="legend" x="${firstLegendX + 29}" y="${firstLegendY + 11}">${firstLegendName}</text>
+    <rect class="area-legend-swatch compare-city-b-area" x="${secondLegendX}" y="${secondLegendY}" width="22" height="12"/><line class="compare-area-outline compare-city-b-outline" x1="${secondLegendX}" x2="${secondLegendX + 22}" y1="${secondLegendY + 6}" y2="${secondLegendY + 6}"/><text class="legend" x="${secondLegendX + 29}" y="${secondLegendY + 11}">${secondLegendName}</text>
   </svg>`;
 }
 

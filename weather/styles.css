@@ -199,9 +199,11 @@ button:disabled { opacity: .5; cursor: not-allowed; }
 .compare-area-panel { margin-top: 18px; }
 .compare-area-layer { isolation: isolate; }
 .compare-area { stroke: none; fill-opacity: .3; mix-blend-mode: multiply; }
+.compare-temperature-band { fill-rule: nonzero; }
 .compare-city-a-area { fill: var(--accent); }
 .compare-city-b-area { fill: var(--night); }
 .compare-area-outline { fill: none; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
+.compare-central-line { stroke-width: 2.9; }
 .compare-city-a-outline { stroke: var(--accent); }
 .compare-city-b-outline { stroke: var(--night); stroke-dasharray: 8 5; }
 .compare-area-point { stroke: var(--panel); stroke-width: 1.5; }

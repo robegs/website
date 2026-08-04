@@ -34,14 +34,14 @@
       <button id="compare-button" class="primary" type="button" disabled>Comparar</button>
       <details class="advanced-config">
         <summary>Configuración avanzada</summary>
-        <p class="advanced-help">Los umbrales diurno y nocturno se ajustan por separado al clima de ambas ubicaciones. Cambia aquí el periodo, el modo o la temperatura de cada comparación.</p>
+        <p class="advanced-help">Elige la temperatura central de cada gráfico. La raya usa ese umbral y la superficie muestra cómo cambia el recuento con umbrales 5 °C inferiores y superiores.</p>
         <div class="advanced-grid compare-advanced">
           <div class="field"><label for="compare-start">Desde</label><input id="compare-start" type="number" min="1940" value="1940"></div>
           <div class="field"><label for="compare-end">Hasta</label><input id="compare-end" type="number" min="1940"></div>
           <div class="field"><label for="compare-mode">Cómo comparar</label><select id="compare-mode"><option value="absolute">Recuento anual</option><option value="anomaly">Diferencia frente al pasado</option></select></div>
           <div class="field"><label for="compare-baseline">Periodo de referencia</label><select id="compare-baseline" disabled><option value="1991-2020">1991–2020</option><option value="1981-2010">1981–2010</option></select></div>
-          <div class="field"><label for="compare-max-threshold">Umbral de días · Tmax</label><select id="compare-max-threshold" disabled><option value="auto">Automático según las ubicaciones</option></select></div>
-          <div class="field"><label for="compare-min-threshold">Umbral de noches · Tmin</label><select id="compare-min-threshold" disabled><option value="auto">Automático según las ubicaciones</option></select></div>
+          <div class="field"><label for="compare-max-threshold">Temperatura central · días (Tmax)</label><select id="compare-max-threshold" disabled><option value="auto">Automático según las ubicaciones</option></select></div>
+          <div class="field"><label for="compare-min-threshold">Temperatura central · noches (Tmin)</label><select id="compare-min-threshold" disabled><option value="auto">Automático según las ubicaciones</option></select></div>
         </div>
       </details>
     </section>
