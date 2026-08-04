@@ -26,6 +26,21 @@ function locationName(place) {
   return [place.name, place.admin1, place.country].filter(Boolean).join(", ");
 }
 
+function shortLocationName(place) {
+  return String(place?.name || "Ubicación").split(",")[0].trim();
+}
+
+function chartLocationName(place, maximumLength) {
+  const name = shortLocationName(place);
+  return name.length <= maximumLength ? name : `${name.slice(0, maximumLength - 1).trimEnd()}…`;
+}
+
+function updateDocumentTitle() {
+  document.title = state.a && state.b
+    ? `${shortLocationName(state.a)} vs. ${shortLocationName(state.b)} · Calor`
+    : "Comparar ubicaciones · Calor";
+}
+
 function escapeHtml(value) {
   const node = document.createElement("div");
   node.textContent = value;
@@ -191,6 +206,7 @@ function ready() {
 function queueSearch(which) {
   clearTimeout(state.timers[which]);
   state[which] = null;
+  updateDocumentTitle();
   state.lastResult = null;
   resetThresholdControls();
   $("comparison").hidden = true;
@@ -236,6 +252,7 @@ async function search(which) {
 
 function choose(which, place) {
   state[which] = place;
+  updateDocumentTitle();
   state.lastResult = null;
   $("comparison").hidden = true;
   $(`station-${which}`).value = locationName(place);
@@ -532,6 +549,10 @@ function render(first, second, values) {
   const difference = values.mode === "absolute" ? rawA - rawB : latest.a[base] - latest.b[base];
   const ratio = rawB === 0 ? null : rawA / rawB;
   const kindLabel = values.kind === "max" ? "Días con Tmax" : "Noches con Tmin";
+  const firstName = shortLocationName(state.a);
+  const secondName = shortLocationName(state.b);
+  const firstNameHtml = escapeHtml(firstName);
+  const secondNameHtml = escapeHtml(secondName);
   const modeLabel = values.mode === "absolute"
     ? "recuento anual"
     : `diferencia frente a la mediana ${values.baseline}`;
@@ -546,10 +567,10 @@ function render(first, second, values) {
     ? `En ${latest.year}`
     : `En ${latest.year}; referencia: ${formatNumber(secondBaseline.medians[base], 1)}`;
 
-  $("compare-title").textContent = `${kindLabel} >${base} °C y otros umbrales`;
+  $("compare-title").textContent = `${firstName} vs. ${secondName} · ${kindLabel} >${base} °C`;
   $("compare-subtitle").textContent = values.mode === "absolute"
-    ? "Cada línea muestra el número de superaciones en un año completo. A es continua y B es discontinua."
-    : `Cada valor es el recuento anual menos la mediana propia de cada ubicación en ${values.baseline}. Cero representa su clima de referencia.`;
+    ? `Cada línea muestra el número de superaciones en un año completo. ${firstName} usa línea continua y ${secondName}, discontinua.`
+    : `Cada valor es el recuento anual menos la mediana propia de cada ubicación en ${values.baseline}. ${firstName} usa línea continua y ${secondName}, discontinua; cero representa su clima de referencia.`;
   $("compare-summary").innerHTML = `
     <article class="metric">
       <span class="label">${escapeHtml(locationName(state.a))} · &gt;${base} °C</span>
@@ -562,12 +583,12 @@ function render(first, second, values) {
       <small>${secondMetricDetail}</small>
     </article>
     <article class="metric">
-      <span class="label">${values.mode === "absolute" ? "Diferencia A − B" : "Diferencia entre anomalías A − B"} · &gt;${base} °C</span>
+      <span class="label">${values.mode === "absolute" ? `Diferencia ${firstNameHtml} − ${secondNameHtml}` : `Diferencia entre anomalías: ${firstNameHtml} − ${secondNameHtml}`} · &gt;${base} °C</span>
       <strong class="value">${signed(difference)} días</strong>
-      <small>${ratio === null ? "Razón de recuentos A/B no disponible (B = 0)" : `Recuento A equivale al ${formatNumber(ratio * 100)} % de B`} · ${latest.year}</small>
+      <small>${ratio === null ? `Razón ${firstNameHtml}/${secondNameHtml} no disponible (${secondNameHtml} = 0)` : `El recuento de ${firstNameHtml} equivale al ${formatNumber(ratio * 100)} % del de ${secondNameHtml}`} · ${latest.year}</small>
     </article>`;
 
-  drawChart(rows, selected, `${kindLabel}: ${modeLabel}`, values.mode);
+  drawChart(rows, selected, `${firstName} frente a ${secondName} · ${kindLabel}: ${modeLabel}`, values.mode);
   renderSourceNote(first.meta, second.meta, values, common);
 }
 
@@ -575,7 +596,7 @@ function renderSourceNote(firstMeta, secondMeta, values, commonRows) {
   const latestCommon = commonRows.at(-1)?.year;
   const timezones = firstMeta.timezone === secondMeta.timezone
     ? firstMeta.timezone
-    : `${firstMeta.timezone} (A) y ${secondMeta.timezone} (B)`;
+    : `${firstMeta.timezone} (${shortLocationName(state.a)}) y ${secondMeta.timezone} (${shortLocationName(state.b)})`;
   const baselineText = values.mode === "anomaly"
     ? ` Las anomalías usan la mediana de ${values.baseline} calculada por separado para cada ubicación.`
     : "";
@@ -656,15 +677,17 @@ function drawChart(rows, thresholds, label, mode) {
   const firstLegendX = compact ? padding.left : width - 330;
   const secondLegendX = compact ? Math.floor(width / 2) + 4 : width - 205;
   const stationLegendY = padding.top - 16;
+  const firstLegendName = escapeHtml(chartLocationName(state.a, compact ? 18 : 32));
+  const secondLegendName = escapeHtml(chartLocationName(state.b, compact ? 18 : 32));
 
   $("compare-chart").innerHTML = `<svg viewBox="0 0 ${width} ${height}" role="img" aria-labelledby="compare-svg-title compare-svg-desc">
     <title id="compare-svg-title">${escapeHtml(label)}</title>
     <desc id="compare-svg-desc">Líneas continuas para ${escapeHtml(locationName(state.a))}; líneas discontinuas para ${escapeHtml(locationName(state.b))}.</desc>
     ${grid}${zeroLabel}${series}${legend}${yearLabels}
     <line x1="${firstLegendX}" x2="${firstLegendX + 30}" y1="${stationLegendY}" y2="${stationLegendY}" style="stroke:#405249;stroke-width:2.5"/>
-    <text class="legend" x="${firstLegendX + 36}" y="${stationLegendY + 4}">A continua</text>
+    <text class="legend" x="${firstLegendX + 36}" y="${stationLegendY + 4}">${firstLegendName}</text>
     <line x1="${secondLegendX}" x2="${secondLegendX + 30}" y1="${stationLegendY}" y2="${stationLegendY}" style="stroke:#405249;stroke-width:2.5;stroke-dasharray:8 5"/>
-    <text class="legend" x="${secondLegendX + 36}" y="${stationLegendY + 4}">B discontinua</text>
+    <text class="legend" x="${secondLegendX + 36}" y="${stationLegendY + 4}">${secondLegendName}</text>
   </svg>`;
 }
 
@@ -707,8 +730,8 @@ function restoreQuery() {
   const lonA = hasA ? Number(params.get("lonA")) : NaN;
   const latB = hasB ? Number(params.get("latB")) : NaN;
   const lonB = hasB ? Number(params.get("lonB")) : NaN;
-  if (Number.isFinite(latA) && Number.isFinite(lonA)) choose("a", {name: params.get("nameA") || "Ubicación A", latitude: latA, longitude: lonA, timezone: params.get("tzA") || "auto"});
-  if (Number.isFinite(latB) && Number.isFinite(lonB)) choose("b", {name: params.get("nameB") || "Ubicación B", latitude: latB, longitude: lonB, timezone: params.get("tzB") || "auto"});
+  if (Number.isFinite(latA) && Number.isFinite(lonA)) choose("a", {name: params.get("nameA") || `${latA.toFixed(3)} / ${lonA.toFixed(3)}`, latitude: latA, longitude: lonA, timezone: params.get("tzA") || "auto"});
+  if (Number.isFinite(latB) && Number.isFinite(lonB)) choose("b", {name: params.get("nameB") || `${latB.toFixed(3)} / ${lonB.toFixed(3)}`, latitude: latB, longitude: lonB, timezone: params.get("tzB") || "auto"});
   [["compare-start", "start"], ["compare-end", "end"], ["compare-kind", "kind"], ["compare-mode", "mode"], ["compare-baseline", "baseline"]].forEach(([id, key]) => { if (params.has(key)) $(id).value = params.get(key); });
   state.pendingBase = params.has("base") && Number.isFinite(Number(params.get("base"))) ? Number(params.get("base")) : null;
   resetThresholdControls();
