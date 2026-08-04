@@ -440,6 +440,7 @@ async function compare() {
     state.lastResult = {first, second, values};
     render(first, second, values);
     $("comparison").hidden = false;
+    if (usePhoneCharts()) requestAnimationFrame(() => $("comparison").scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" }));
     setStatus(first.cached && second.cached
       ? "Comparación lista (ambas series se recuperaron de la caché de esta sesión)."
       : "Comparación lista.");
@@ -506,6 +507,10 @@ function displayRows(firstRows, secondRows, values) {
 
 function formatNumber(value, digits = 0) {
   return Number(value).toLocaleString("es-ES", {maximumFractionDigits: digits, minimumFractionDigits: digits});
+}
+
+function usePhoneCharts() {
+  return window.matchMedia("(max-width: 760px)").matches;
 }
 
 function signed(value) {
@@ -596,10 +601,15 @@ function pathFor(rows, side, threshold, x, y) {
 }
 
 function drawChart(rows, thresholds, label, mode) {
-  const width = 1060;
-  const height = 460;
-  const legendRows = Math.ceil(thresholds.length / 6);
-  const padding = {left: 58, right: 20, top: 55 + legendRows * 18, bottom: 48};
+  const compact = usePhoneCharts();
+  const legendColumns = compact ? 2 : 6;
+  const legendRowHeight = compact ? 20 : 18;
+  const legendRows = Math.ceil(thresholds.length / legendColumns);
+  const width = compact ? 420 : 1060;
+  const height = compact ? 360 + legendRows * legendRowHeight : 460;
+  const padding = compact
+    ? {left: 48, right: 14, top: 44 + legendRows * legendRowHeight, bottom: 44}
+    : {left: 58, right: 20, top: 55 + legendRows * legendRowHeight, bottom: 48};
   const values = rows.flatMap(row => thresholds.flatMap(threshold => [row.a?.[threshold], row.b?.[threshold]]))
     .filter(Number.isFinite);
   let minimum = mode === "absolute" ? 0 : Math.min(0, ...values);
@@ -612,7 +622,7 @@ function drawChart(rows, thresholds, label, mode) {
   const x = index => padding.left + index * (width - padding.left - padding.right) / Math.max(1, rows.length - 1);
   const y = value => height - padding.bottom - (value - minimum) * (height - padding.top - padding.bottom) / Math.max(1, maximum - minimum);
   let grid = "";
-  const tickCount = 5;
+  const tickCount = compact ? 4 : 5;
   for (let index = 0; index <= tickCount; index += 1) {
     const value = minimum + (maximum - minimum) * index / tickCount;
     const yy = y(value);
@@ -628,26 +638,33 @@ function drawChart(rows, thresholds, label, mode) {
     const secondPath = pathFor(rows, "b", threshold, x, y);
     series += `<path class="compare-a" d="${firstPath}" style="fill:none;stroke:${color};stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round"><title>${escapeHtml(locationName(state.a))}: >${threshold} °C</title></path>`;
     series += `<path class="compare-b" d="${secondPath}" style="fill:none;stroke:${color};stroke-width:2.5;stroke-dasharray:8 5;stroke-linecap:round;stroke-linejoin:round"><title>${escapeHtml(locationName(state.b))}: >${threshold} °C</title></path>`;
-    legend += `<line x1="${padding.left + (index % 6) * 155}" x2="${padding.left + 22 + (index % 6) * 155}" y1="${22 + Math.floor(index / 6) * 18}" y2="${22 + Math.floor(index / 6) * 18}" style="stroke:${color};stroke-width:3"/><text class="legend" x="${padding.left + 28 + (index % 6) * 155}" y="${26 + Math.floor(index / 6) * 18}">&gt;${threshold} °C</text>`;
+    const legendX = padding.left + (index % legendColumns) * (compact ? 175 : 155);
+    const legendY = 22 + Math.floor(index / legendColumns) * legendRowHeight;
+    legend += `<line x1="${legendX}" x2="${legendX + 22}" y1="${legendY}" y2="${legendY}" style="stroke:${color};stroke-width:3"/><text class="legend" x="${legendX + 28}" y="${legendY + 4}">&gt;${threshold} °C</text>`;
   });
 
-  const labelEvery = Math.max(1, Math.ceil(rows.length / 8));
+  const labelEvery = Math.max(1, Math.ceil(rows.length / (compact ? 4 : 8)));
   const yearLabels = rows.map((row, index) => {
     if (index !== 0 && index !== rows.length - 1 && index % labelEvery !== 0) return "";
-    return `<text class="axis" x="${x(index)}" y="${height - 18}" text-anchor="middle">${row.year}</text>`;
+    const anchor = index === rows.length - 1 ? "end" : "middle";
+    return `<text class="axis" x="${x(index)}" y="${height - 15}" text-anchor="${anchor}">${row.year}</text>`;
   }).join("");
   const zeroLabel = mode === "anomaly"
     ? `<line x1="${padding.left}" x2="${width - padding.right}" y1="${y(0)}" y2="${y(0)}" style="stroke:#7f8c84;stroke-width:1.5"/><text class="legend" x="${padding.left + 8}" y="${y(0) - 7}">mediana de referencia</text>`
     : "";
 
+  const firstLegendX = compact ? padding.left : width - 330;
+  const secondLegendX = compact ? Math.floor(width / 2) + 4 : width - 205;
+  const stationLegendY = padding.top - 16;
+
   $("compare-chart").innerHTML = `<svg viewBox="0 0 ${width} ${height}" role="img" aria-labelledby="compare-svg-title compare-svg-desc">
     <title id="compare-svg-title">${escapeHtml(label)}</title>
     <desc id="compare-svg-desc">Líneas continuas para ${escapeHtml(locationName(state.a))}; líneas discontinuas para ${escapeHtml(locationName(state.b))}.</desc>
     ${grid}${zeroLabel}${series}${legend}${yearLabels}
-    <line x1="${width - 330}" x2="${width - 300}" y1="${height - 19}" y2="${height - 19}" style="stroke:#405249;stroke-width:2.5"/>
-    <text class="legend" x="${width - 294}" y="${height - 15}">A continua</text>
-    <line x1="${width - 205}" x2="${width - 175}" y1="${height - 19}" y2="${height - 19}" style="stroke:#405249;stroke-width:2.5;stroke-dasharray:8 5"/>
-    <text class="legend" x="${width - 169}" y="${height - 15}">B discontinua</text>
+    <line x1="${firstLegendX}" x2="${firstLegendX + 30}" y1="${stationLegendY}" y2="${stationLegendY}" style="stroke:#405249;stroke-width:2.5"/>
+    <text class="legend" x="${firstLegendX + 36}" y="${stationLegendY + 4}">A continua</text>
+    <line x1="${secondLegendX}" x2="${secondLegendX + 30}" y1="${stationLegendY}" y2="${stationLegendY}" style="stroke:#405249;stroke-width:2.5;stroke-dasharray:8 5"/>
+    <text class="legend" x="${secondLegendX + 36}" y="${stationLegendY + 4}">B discontinua</text>
   </svg>`;
 }
 
@@ -702,3 +719,15 @@ function restoreQuery() {
 
 resetThresholdControls();
 if (!restoreQuery()) { queueSearch("a"); queueSearch("b"); }
+
+let lastCompactChartLayout = usePhoneCharts();
+let chartResizeTimer = null;
+window.addEventListener("resize", () => {
+  const compact = usePhoneCharts();
+  if (compact === lastCompactChartLayout) return;
+  lastCompactChartLayout = compact;
+  clearTimeout(chartResizeTimer);
+  chartResizeTimer = setTimeout(() => {
+    if (state.lastResult && !$("comparison").hidden) rerenderLastResult();
+  }, 150);
+});

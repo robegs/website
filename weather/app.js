@@ -3,7 +3,7 @@ const MIN_THRESHOLD_LINES = 5;
 const MAX_THRESHOLD_LINES = 9;
 const CURRENT_YEAR = new Date().getFullYear();
 const CACHE_PREFIX = "calor-main-session-v3:";
-const state = { station: null, rows: [], maxThresholds: [], minThresholds: [], source: "era5", baseline: null, searchTimer: null, searchAbort: null };
+const state = { station: null, rows: [], maxThresholds: [], minThresholds: [], source: "era5", baseline: null, searchTimer: null, searchAbort: null, lastRender: null };
 
 const MAX_TEXTS = [
   "Los episodios extremos son excepcionales y el periodo reciente queda claramente por debajo de la referencia.", "Los episodios extremos son excepcionales y el periodo reciente queda algo por debajo de la referencia.", "Los episodios extremos son excepcionales y no muestran un cambio apreciable.", "Los episodios extremos son excepcionales, con un aumento moderado.", "Los episodios extremos son excepcionales, con un aumento claro.", "Los episodios extremos son excepcionales, pero el aumento reciente es muy marcado.",
@@ -26,6 +26,7 @@ function quantile(values, q) { if (!values.length) return null; const sorted = [
 function median(values) { return quantile(values, 0.5); }
 function formatNumber(value, digits = 0) { return value == null || !Number.isFinite(value) ? "—" : new Intl.NumberFormat("es-ES", { maximumFractionDigits: digits }).format(value); }
 function formatDate(value) { return value ? new Intl.DateTimeFormat("es-ES", { day: "numeric", month: "short" }).format(new Date(`${value}T12:00:00Z`)) : "—"; }
+function usePhoneCharts() { return window.matchMedia("(max-width: 760px)").matches; }
 
 function adaptiveThresholds(values) {
   const finite = values.filter(Number.isFinite);
@@ -242,28 +243,31 @@ function renderSummary(max, min, baseline) {
 }
 function renderProgress(id, points, title, threshold) {
   $(id.replace("progress", "progress-title")).textContent = `${title} > ${threshold} °C`;
-  const width = 720, height = 300, p = { l: 42, r: 14, t: 28, b: 36 }, top = Math.max(1, ...points.flatMap((point) => [point.current, point.high || 0])), x = (i) => p.l + i * (width - p.l - p.r) / Math.max(1, points.length - 1), y = (value) => height - p.b - value * (height - p.t - p.b) / top, line = (key) => points.map((point, i) => `${x(i)},${y(point[key])}`).join(" "), upper = points.map((point, i) => `${x(i)},${y(point.high)}`).join(" "), lower = [...points].reverse().map((point, reverseIndex) => `${x(points.length - 1 - reverseIndex)},${y(point.low)}`).join(" ");
+  const compact = usePhoneCharts(), width = compact ? 420 : 720, height = compact ? 360 : 300, p = { l: 42, r: 14, t: 28, b: 40 }, top = Math.max(1, ...points.flatMap((point) => [point.current, point.high || 0])), x = (i) => p.l + i * (width - p.l - p.r) / Math.max(1, points.length - 1), y = (value) => height - p.b - value * (height - p.t - p.b) / top, line = (key) => points.map((point, i) => `${x(i)},${y(point[key])}`).join(" "), upper = points.map((point, i) => `${x(i)},${y(point.high)}`).join(" "), lower = [...points].reverse().map((point, reverseIndex) => `${x(points.length - 1 - reverseIndex)},${y(point.low)}`).join(" ");
   let grid = ""; for (let i = 0; i <= 4; i++) { const value = Math.round(top * i / 4), yy = y(value); grid += `<line class="grid" x1="${p.l}" x2="${width - p.r}" y1="${yy}" y2="${yy}"/><text class="axis" x="${p.l - 6}" y="${yy + 4}" text-anchor="end">${value}</text>`; }
-  const months = points.map((point, i) => ({ point, i })).filter(({ point, i }) => i === 0 || point.date.slice(8) === "01").map(({ point, i }) => `<text class="axis" x="${x(i)}" y="${height - 12}" text-anchor="middle">${new Intl.DateTimeFormat("es-ES", { month: "short" }).format(new Date(`${point.date}T12:00:00Z`))}</text>`).join("");
+  const months = points.map((point, i) => ({ point, i })).filter(({ point, i }) => i === 0 || (point.date.slice(8) === "01" && (!compact || (Number(point.date.slice(5, 7)) - 1) % 2 === 0))).map(({ point, i }) => `<text class="axis" x="${x(i)}" y="${height - 12}" text-anchor="middle">${new Intl.DateTimeFormat("es-ES", { month: "short" }).format(new Date(`${point.date}T12:00:00Z`))}</text>`).join("");
   const tooltips = points.filter((_, i) => i % 7 === 0 || i === points.length - 1).map((point, i) => `<circle cx="${x(points.indexOf(point))}" cy="${y(point.current)}" r="3" class="current-point"><title>${point.date}: ${point.current}; mediana ${formatNumber(point.median, 1)}</title></circle>`).join("");
-  $(id).innerHTML = `<svg viewBox="0 0 ${width} ${height}" role="img"><title>Acumulado actual frente al rango histórico</title>${grid}<polygon class="range-band" points="${upper} ${lower}"/><polyline class="baseline-line" points="${line("median")}"/><polyline class="current-line" points="${line("current")}"/>${tooltips}${months}<text class="legend" x="${p.l}" y="16">— año actual   — mediana   ▨ rango 10–90%</text></svg>`;
+  const legend = compact
+    ? `<line class="current-line" x1="42" x2="58" y1="15" y2="15"/><text class="legend" x="64" y="19">actual</text><line class="baseline-line" x1="120" x2="136" y1="15" y2="15"/><text class="legend" x="142" y="19">mediana</text><rect class="range-band" x="226" y="9" width="16" height="10"/><text class="legend" x="248" y="19">rango 10–90%</text>`
+    : `<text class="legend" x="${p.l}" y="16">— año actual   — mediana   ▨ rango 10–90%</text>`;
+  $(id).innerHTML = `<svg viewBox="0 0 ${width} ${height}" role="img"><title>Acumulado actual frente al rango histórico</title>${grid}<polygon class="range-band" points="${upper} ${lower}"/><polyline class="baseline-line" points="${line("median")}"/><polyline class="current-line" points="${line("current")}"/>${tooltips}${months}${legend}</svg>`;
 }
 function renderIndicators(indicators, maxThreshold, minThreshold) {
   const items = [["Olas de calor", indicators.heatwaves, `≥3 días seguidos con Tmax > ${maxThreshold} °C`], ["Racha más larga", `${indicators.longest} días`, "incluye rachas de uno o dos días"], ["Días en olas", indicators.heatwaveDays, "días pertenecientes a olas de calor"], ["Intensidad acumulada", `${formatNumber(indicators.degreeDays, 1)} °C·día`, `exceso sobre ${maxThreshold} °C`], ["Temporada observada", `${formatDate(indicators.first)} – ${formatDate(indicators.last)}`, "primer y último día sobre el umbral"], ["Días y noches compuestos", indicators.compound, `Tmax > ${maxThreshold} °C y Tmin > ${minThreshold} °C`]];
   $("heat-indicators").innerHTML = items.map(([label, value, note]) => `<article class="indicator"><span>${label}</span><strong>${value}</strong><small>${note}</small></article>`).join("");
 }
 function renderAnnual(id, rows, thresholds, smoothed, field, label, projections) {
-  const width = 1040, height = 420, p = { l: 50, r: 24, t: 60, b: 42 }, values = [...rows.flatMap((row) => thresholds.map((t) => row[field][t] || 0)), ...projections.flatMap((item) => [item.high || 0])], top = Math.max(1, ...values), x = (i) => p.l + i * (width - p.l - p.r) / Math.max(1, rows.length), y = (value) => height - p.b - value * (height - p.t - p.b) / top, points = (items) => items.map((value, i) => value == null ? "" : `${x(i)},${y(value)}`).join(" ");
+  const compact = usePhoneCharts(), legendColumns = compact ? 2 : 6, legendRowHeight = compact ? 20 : 17, legendRows = Math.ceil(thresholds.length / legendColumns), width = compact ? 420 : 1040, height = compact ? 380 + legendRows * legendRowHeight : 420, p = { l: compact ? 42 : 50, r: compact ? 14 : 24, t: compact ? 34 + legendRows * legendRowHeight : 60, b: compact ? 46 : 42 }, values = [...rows.flatMap((row) => thresholds.map((t) => row[field][t] || 0)), ...projections.flatMap((item) => [item.high || 0])], top = Math.max(1, ...values), x = (i) => p.l + i * (width - p.l - p.r) / Math.max(1, rows.length), y = (value) => height - p.b - value * (height - p.t - p.b) / top, points = (items) => items.map((value, i) => value == null ? "" : `${x(i)},${y(value)}`).join(" ");
   let svg = "", legend = ""; for (let i = 0; i <= 4; i++) { const value = Math.round(top * i / 4), yy = y(value); svg += `<line class="grid" x1="${p.l}" x2="${width - p.r}" y1="${yy}" y2="${yy}"/><text class="axis" x="${p.l - 7}" y="${yy + 4}" text-anchor="end">${value}</text>`; }
   thresholds.forEach((threshold, index) => {
     const stroke = color(index, thresholds.length), annual = rows.map((row) => row[field][threshold] || 0), projection = projections.find((item) => item.threshold === threshold), px = x(rows.length);
     svg += `<polyline class="series" style="stroke:${stroke}" points="${points(annual)}"/>`;
     if (smoothed.includes(threshold)) svg += `<polyline class="average" style="stroke:${stroke}" points="${points(movingMedian(rows, field, threshold))}"/>`;
     if (projection?.expected != null) { svg += `<line class="projection-whisker" style="stroke:${stroke}" x1="${px}" x2="${px}" y1="${y(projection.low)}" y2="${y(projection.high)}"/><line class="projection-link" style="stroke:${stroke}" x1="${x(rows.length - 1)}" y1="${y(annual.at(-1))}" x2="${px}" y2="${y(projection.expected)}"/><path fill="${stroke}" d="M ${px} ${y(projection.expected) - 5} l 5 5 l -5 5 l -5 -5 Z"><title>${CURRENT_YEAR}: ${formatNumber(projection.expected)} (${formatNumber(projection.low)}–${formatNumber(projection.high)})</title></path>`; if (smoothed.includes(threshold)) svg += `<text class="projection-label" x="${px - 3}" y="${y(projection.expected) - 8}" text-anchor="end">${formatNumber(projection.expected)}</text>`; }
-    legend += `<text class="legend" x="${p.l + (index % 6) * 155}" y="${18 + Math.floor(index / 6) * 17}" fill="${stroke}">● &gt;${threshold} °C${smoothed.includes(threshold) ? " · mediana 5a" : ""}</text>`;
+    legend += `<text class="legend" x="${p.l + (index % legendColumns) * (compact ? 180 : 155)}" y="${18 + Math.floor(index / legendColumns) * legendRowHeight}" fill="${stroke}">● &gt;${threshold} °C${smoothed.includes(threshold) ? " · mediana 5a" : ""}</text>`;
   });
-  const years = rows.map((row, i) => ({ row, i })).filter(({ i }) => i === 0 || i === rows.length - 1 || i % Math.ceil(rows.length / 8) === 0).map(({ row, i }) => `<text class="axis" x="${x(i)}" y="${height - 15}" text-anchor="middle">${row.year}</text>`).join("");
-  $(id).innerHTML = `<svg viewBox="0 0 ${width} ${height}" role="img"><title>${label} anuales por encima de cada umbral</title>${svg}${legend}${years}<text class="axis" x="${x(rows.length)}" y="${height - 15}" text-anchor="middle">${CURRENT_YEAR} est.</text></svg>`;
+  const labelEvery = Math.max(1, Math.ceil(rows.length / (compact ? 4 : 8))), years = rows.map((row, i) => ({ row, i })).filter(({ i }) => i === 0 || (i > 0 && i < rows.length - 1 && i % labelEvery === 0)).map(({ row, i }) => `<text class="axis" x="${x(i)}" y="${height - 15}" text-anchor="middle">${row.year}</text>`).join("");
+  $(id).innerHTML = `<svg viewBox="0 0 ${width} ${height}" role="img"><title>${label} anuales por encima de cada umbral</title>${svg}${legend}${years}<text class="axis" x="${x(rows.length)}" y="${height - 15}" text-anchor="end">${CURRENT_YEAR} est.</text></svg>`;
 }
 function renderExplanation(id, library, rows, field, threshold, baseline) {
   const reference = rows.filter((row) => row.year >= baseline.start && row.year <= baseline.end).map((row) => row[field][threshold]), recent = rows.slice(-10).map((row) => row[field][threshold]), referenceMean = mean(reference), recentMean = mean(recent), record = Math.max(...rows.map((row) => row[field][threshold])), ratio = referenceMean ? recentMean / referenceMean : recentMean ? 2 : 1, trend = ratio <= .75 ? 0 : ratio <= .95 ? 1 : ratio < 1.15 ? 2 : ratio < 1.4 ? 3 : ratio < 1.8 ? 4 : 5, intensity = record === 0 ? 0 : record <= 2 ? 1 : record <= 6 ? 2 : 3;
@@ -280,14 +284,16 @@ function renderAll(history, current, config) {
   renderSummary(max, min, config.baseline); renderProgress("max-progress", cumulativeProfile(history, max, config.baseline), "Tmax", config.maxThreshold); renderProgress("min-progress", cumulativeProfile(history, min, config.baseline), "Tmin", config.minThreshold); renderIndicators(heatIndicators(current, config.maxThreshold, config.minThreshold), config.maxThreshold, config.minThreshold); renderAnnual("max-chart", rows, maxThresholds, maxThresholds.filter((threshold) => threshold % 5 === 0), "max", "Días", maxProjections); renderAnnual("min-chart", rows, minThresholds, minThresholds.filter((threshold) => threshold % 5 === 0), "min", "Noches", minProjections); renderExplanation("max-explanation", MAX_TEXTS, rows, "max", config.maxThreshold, config.baseline); renderExplanation("min-explanation", MIN_TEXTS, rows, "min", config.minThreshold, config.baseline);
   const source = config.source === "nasa" ? "NASA POWER (datos diarios en UTC, rejilla global desde 1981)" : `ERA5 mediante Open-Meteo (zona diaria ${history.timezone}, punto de rejilla)`;
   $("source-eyebrow").textContent = `ANÁLISIS CLIMÁTICO · ${config.source === "nasa" ? "NASA POWER" : "ERA5"}`; $("source-note").textContent = `Fuente: ${source}. Ubicación: ${stationName(state.station)} (${state.station.latitude.toFixed(4)}, ${state.station.longitude.toFixed(4)}). Umbrales ajustados al rango observado: Tmax > ${maxThresholds[0]}–${maxThresholds.at(-1)} °C y Tmin > ${minThresholds[0]}–${minThresholds.at(-1)} °C. Último dato actual: ${max.latest}. No son necesariamente observaciones de una estación física.`;
+  state.lastRender = { history, current, config: { ...config, baseline: { ...config.baseline } } };
 }
 
 async function analyse() {
   try {
-    const config = inputs(); if (!state.station) throw new Error("Selecciona una ubicación."); $("analyse-button").disabled = true; $("analysis").hidden = true;
+    const config = inputs(); if (!state.station) throw new Error("Selecciona una ubicación."); $("analyse-button").disabled = true; $("analysis").hidden = true; state.lastRender = null;
     setStatus(`Cargando histórico de ${config.source === "nasa" ? "NASA POWER" : "ERA5"}…`); const history = await loadData(config.source, iso(config.requestStart, 1, 1), iso(config.requestEnd, 12, 31));
     setStatus("Cargando datos del año actual…"); const current = await loadData(config.source, iso(CURRENT_YEAR, 1, 1), new Date().toISOString().slice(0, 10));
     renderAll(history, current, config); $("analysis").hidden = false; setStatus(`Análisis listo para ${stationName(state.station)}.`);
+    if (usePhoneCharts()) requestAnimationFrame(() => $("analysis").scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" }));
   } catch (error) {
     if (error.inputId) {
       document.querySelector(".advanced-config").open = true;
@@ -327,6 +333,7 @@ function markAnalysisStale() {
   if ($("analysis").hidden) return;
   $("analysis").hidden = true;
   state.rows = [];
+  state.lastRender = null;
   setStatus("La configuración avanzada cambió. Pulsa Analizar para actualizar el resultado.");
 }
 
@@ -340,3 +347,15 @@ $("baseline").onchange = () => { $("custom-baseline").hidden = $("baseline").val
 $("data-source").onchange = () => { if ($("data-source").value === "nasa" && Number($("start-year").value) < 1981) $("start-year").value = 1981; markAnalysisStale(); };
 ["start-year", "end-year", "baseline-start", "baseline-end", "focus-max", "focus-min"].forEach((id) => $(id).addEventListener("change", markAnalysisStale));
 restoreUrl(); if (!state.station) queueSearch();
+
+let lastCompactChartLayout = usePhoneCharts();
+let chartResizeTimer = null;
+window.addEventListener("resize", () => {
+  const compact = usePhoneCharts();
+  if (compact === lastCompactChartLayout) return;
+  lastCompactChartLayout = compact;
+  clearTimeout(chartResizeTimer);
+  chartResizeTimer = setTimeout(() => {
+    if (state.lastRender && !$("analysis").hidden) renderAll(state.lastRender.history, state.lastRender.current, state.lastRender.config);
+  }, 150);
+});
