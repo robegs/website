@@ -1,8 +1,8 @@
 const $ = id => document.getElementById(id);
 const YEAR_NOW = new Date().getFullYear();
 const CANDIDATE_THRESHOLDS = Array.from({length: 121}, (_, index) => index - 60);
-const BAND_HALF_WIDTH = 5;
-const BAND_CENTER_THRESHOLDS = CANDIDATE_THRESHOLDS.slice(BAND_HALF_WIDTH, -BAND_HALF_WIDTH);
+const MAX_BAND_HALF_WIDTH = 5;
+const BAND_LOWER_TARGET_RATE = 0.15;
 const MIN_THRESHOLD_LINES = 5;
 const MAX_THRESHOLD_LINES = 9;
 const SOURCE = "era5-open-meteo";
@@ -18,6 +18,7 @@ const state = {
   timers: {},
   controllers: {},
   thresholds: {max: [], min: []},
+  bandConfigs: {max: null, min: null},
   pendingThresholds: {max: null, min: null},
   lastResult: null,
   comparisonRun: 0
@@ -111,12 +112,13 @@ function currentThresholds(kind) {
   return state.thresholds[kind] || [];
 }
 
-function automaticThreshold(thresholds) {
-  return thresholds.find(value => value % 5 === 0) ?? thresholds[Math.floor(thresholds.length / 2)];
+function automaticThreshold(kind) {
+  return state.bandConfigs[kind]?.automatic ?? null;
 }
 
-function temperatureBand(threshold) {
-  return {lower: threshold - BAND_HALF_WIDTH, center: threshold, upper: threshold + BAND_HALF_WIDTH};
+function temperatureBand(threshold, kind) {
+  const halfWidth = state.bandConfigs[kind]?.halfWidth ?? MAX_BAND_HALF_WIDTH;
+  return {lower: threshold - halfWidth, center: threshold, upper: threshold + halfWidth};
 }
 
 function thresholdSelectId(kind) {
@@ -125,6 +127,7 @@ function thresholdSelectId(kind) {
 
 function resetThresholdSelectors() {
   state.thresholds = {max: [], min: []};
+  state.bandConfigs = {max: null, min: null};
   ["max", "min"].forEach(kind => {
     const select = $(thresholdSelectId(kind));
     select.replaceChildren(new Option("Automático según las ubicaciones", "auto", true, true));
@@ -135,13 +138,13 @@ function resetThresholdSelectors() {
 function populateThresholdSelector(kind, preferredThreshold = null) {
   const thresholds = currentThresholds(kind);
   if (!thresholds.length) throw new Error(`No se pudo ajustar el umbral de ${kind === "max" ? "días" : "noches"}.`);
-  const automatic = automaticThreshold(thresholds);
+  const automatic = automaticThreshold(kind);
   const previous = Number($(thresholdSelectId(kind)).value);
   const selected = [preferredThreshold, previous, automatic]
     .find(value => Number.isFinite(value) && thresholds.includes(value)) ?? automatic;
   const options = thresholds.map(value => {
-    const band = temperatureBand(value);
-    return new Option(`${value} °C · área ${band.lower}–${band.upper} °C${value === automatic ? " · automático" : ""}`, value);
+    const band = temperatureBand(value, kind);
+    return new Option(`${value === automatic ? "Auto · " : ""}> ${value} °C · ${band.lower}/${band.upper}`, value);
   });
   const select = $(thresholdSelectId(kind));
   select.replaceChildren(...options);
@@ -218,6 +221,8 @@ function choose(which, place) {
   state[which] = place;
   updateDocumentTitle();
   state.lastResult = null;
+  state.pendingThresholds = {max: null, min: null};
+  resetThresholdSelectors();
   $("comparison").hidden = true;
   $(`station-${which}`).value = locationName(place);
   $(`results-${which}`).replaceChildren();
@@ -384,18 +389,50 @@ function median(values) {
   return sorted.length % 2 ? sorted[middle] : (sorted[middle - 1] + sorted[middle]) / 2;
 }
 
-function adaptiveComparisonThresholds(firstRows, secondRows, values, kind) {
-  const rows = [...firstRows, ...secondRows].filter(row => row.year >= values.start && row.year <= values.end);
-  const totalDays = rows.reduce((sum, row) => sum + row.days, 0);
-  if (!totalDays) throw new Error(`No hay temperaturas suficientes para ajustar los umbrales de ${kind === "max" ? "días" : "noches"}.`);
-  const exceedances = threshold => rows.reduce((sum, row) => sum + (row.counts[threshold] || 0), 0);
-  const highest = [...BAND_CENTER_THRESHOLDS].reverse().find(threshold => exceedances(threshold) > 0);
-  if (!Number.isFinite(highest)) throw new Error("El rango de temperaturas queda fuera de los límites disponibles.");
-  const climateStart = BAND_CENTER_THRESHOLDS.find(threshold => exceedances(threshold) <= totalDays * 0.1) ?? highest;
-  let lowest = Math.max(climateStart, highest - (MAX_THRESHOLD_LINES - 1));
-  lowest = Math.min(lowest, highest - (MIN_THRESHOLD_LINES - 1));
-  lowest = Math.max(lowest, BAND_CENTER_THRESHOLDS[0]);
-  return Array.from({length: highest - lowest + 1}, (_, index) => lowest + index);
+function adaptiveComparisonBand(firstRows, secondRows, values, kind) {
+  const secondByYear = new Map(secondRows.map(row => [row.year, row]));
+  const pairs = firstRows
+    .filter(row => row.year >= values.start && row.year <= values.end && secondByYear.has(row.year))
+    .map(first => ({first, second: secondByYear.get(first.year)}));
+  const totalDays = pairs.reduce((sum, pair) => sum + pair.first.days + pair.second.days, 0);
+  if (!totalDays) throw new Error(`No hay años completos comunes para ajustar los umbrales de ${kind === "max" ? "días" : "noches"}.`);
+
+  const exceedances = threshold => pairs.reduce((sum, pair) => (
+    sum + (pair.first.counts[threshold] || 0) + (pair.second.counts[threshold] || 0)
+  ), 0);
+  const lowerTarget = CANDIDATE_THRESHOLDS.find(threshold => exceedances(threshold) <= totalDays * BAND_LOWER_TARGET_RATE);
+  const upperCandidates = CANDIDATE_THRESHOLDS.slice(2);
+  const upperSafe = [...upperCandidates].reverse().find(threshold => (
+    pairs.every(pair => (pair.first.counts[threshold] || 0) > 0)
+    || pairs.every(pair => (pair.second.counts[threshold] || 0) > 0)
+  ));
+  if (!Number.isFinite(lowerTarget) || !Number.isFinite(upperSafe)) {
+    throw new Error("El rango de temperaturas queda fuera de los límites disponibles.");
+  }
+
+  const maximumAvailableWidth = Math.floor((upperSafe - CANDIDATE_THRESHOLDS[0]) / 2);
+  const halfWidth = Math.max(1, Math.min(
+    MAX_BAND_HALF_WIDTH,
+    maximumAvailableWidth,
+    Math.round((upperSafe - lowerTarget) / 2)
+  ));
+  const automatic = upperSafe - halfWidth;
+  const highestObserved = [...CANDIDATE_THRESHOLDS].reverse().find(threshold => exceedances(threshold) > 0) ?? upperSafe;
+  const minimumCenter = CANDIDATE_THRESHOLDS[0] + halfWidth;
+  const maximumCenter = CANDIDATE_THRESHOLDS.at(-1) - halfWidth;
+  let lowest = Math.max(minimumCenter, automatic - Math.floor((MAX_THRESHOLD_LINES - 1) / 2));
+  let highest = Math.min(maximumCenter, highestObserved - halfWidth, automatic + Math.floor((MAX_THRESHOLD_LINES - 1) / 2));
+
+  while (highest - lowest + 1 < MIN_THRESHOLD_LINES && lowest > minimumCenter) lowest -= 1;
+  while (highest - lowest + 1 < MIN_THRESHOLD_LINES && highest < Math.min(maximumCenter, highestObserved - halfWidth)) highest += 1;
+
+  return {
+    automatic,
+    halfWidth,
+    upperSafe,
+    lowerTarget,
+    thresholds: Array.from({length: highest - lowest + 1}, (_, index) => lowest + index)
+  };
 }
 
 function baselineMedians(rows, values) {
@@ -435,6 +472,13 @@ function comparisonUiSignature() {
     .join("\u0000");
 }
 
+function comparisonReadyStatus(values, cached = false) {
+  const maxBand = temperatureBand(values.maxThreshold, "max");
+  const minBand = temperatureBand(values.minThreshold, "min");
+  const cacheText = cached ? " Datos recuperados de la caché de esta sesión." : "";
+  return `Comparación lista. Umbrales: días > ${maxBand.lower} / > ${maxBand.center} / > ${maxBand.upper} °C; noches > ${minBand.lower} / > ${minBand.center} / > ${minBand.upper} °C.${cacheText}`;
+}
+
 async function compare() {
   const runId = ++state.comparisonRun;
   let firstPlace = null;
@@ -461,8 +505,10 @@ async function compare() {
 
     const requestedMax = values.maxThreshold ?? state.pendingThresholds.max;
     const requestedMin = values.minThreshold ?? state.pendingThresholds.min;
-    state.thresholds.max = adaptiveComparisonThresholds(first.rowsByKind.max, second.rowsByKind.max, values, "max");
-    state.thresholds.min = adaptiveComparisonThresholds(first.rowsByKind.min, second.rowsByKind.min, values, "min");
+    const maxBandConfig = adaptiveComparisonBand(first.rowsByKind.max, second.rowsByKind.max, values, "max");
+    const minBandConfig = adaptiveComparisonBand(first.rowsByKind.min, second.rowsByKind.min, values, "min");
+    state.bandConfigs = {max: maxBandConfig, min: minBandConfig};
+    state.thresholds = {max: maxBandConfig.thresholds, min: minBandConfig.thresholds};
     values.maxThreshold = populateThresholdSelector("max", requestedMax);
     values.minThreshold = populateThresholdSelector("min", requestedMin);
     state.pendingThresholds = {max: null, min: null};
@@ -472,9 +518,7 @@ async function compare() {
     updateComparisonUrl(values);
     $("comparison").hidden = false;
     if (usePhoneCharts()) requestAnimationFrame(() => $("comparison").scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" }));
-    setStatus(first.cached && second.cached
-      ? "Comparación lista (ambas series se recuperaron de la caché de esta sesión)."
-      : "Comparación lista.");
+    setStatus(comparisonReadyStatus(values, first.cached && second.cached));
   } catch (error) {
     if (firstPlace && !isCurrent()) return;
     if (error.inputId) {
@@ -499,6 +543,7 @@ function rerenderLastResult() {
       render(state.lastResult.first, state.lastResult.second, values);
       state.lastResult.values = values;
       updateComparisonUrl(values);
+      setStatus(comparisonReadyStatus(values));
     }
     else {
       state.lastResult = null;
@@ -604,7 +649,8 @@ function renderKindComparison(first, second, values, kind) {
   const spec = comparisonSpec(kind);
   const threshold = values[spec.thresholdKey];
   if (!Number.isFinite(threshold)) throw configurationError(`Selecciona un umbral de ${spec.unit} válido.`, thresholdSelectId(kind));
-  const band = temperatureBand(threshold);
+  const band = temperatureBand(threshold, kind);
+  const isAutomatic = threshold === automaticThreshold(kind);
   const kindValues = {
     ...values,
     thresholds: [band.lower, band.center, band.upper],
@@ -632,15 +678,15 @@ function renderKindComparison(first, second, values, kind) {
 
   $(`compare-${kind}-title`).textContent = `${spec.title} con ${spec.variable} > ${threshold} °C`;
   $(`compare-${kind}-subtitle`).textContent = values.mode === "absolute"
-    ? `La raya muestra el recuento anual sobre ${threshold} °C. La superficie queda entre los recuentos sobre ${band.lower} °C y ${band.upper} °C: compara umbrales, no representa incertidumbre. ${firstName} es naranja y ${secondName} azul.`
-    : `La raya muestra la diferencia del recuento > ${threshold} °C frente a su mediana ${values.baseline}. La superficie aplica esa misma referencia central a > ${band.lower} °C y > ${band.upper} °C: compara umbrales, no incertidumbre. ${firstName} es naranja y ${secondName} azul.`;
+    ? `${isAutomatic ? "Banda ajustada con ambas ubicaciones" : "Banda elegida manualmente"}: > ${band.lower} / > ${band.upper} °C, con raya > ${threshold} °C. La superficie compara umbrales, no representa incertidumbre. ${firstName} es naranja y ${secondName} azul.`
+    : `${isAutomatic ? "Banda ajustada con ambas ubicaciones" : "Banda elegida manualmente"}: > ${band.lower} / > ${band.upper} °C, con raya > ${threshold} °C. Se muestra la diferencia frente a la mediana ${values.baseline}, usando la misma referencia central en los tres umbrales. ${firstName} es naranja y ${secondName} azul.`;
 
   drawTemperatureBandChart(`compare-${kind}-chart`, rows, band, kind, values.mode, values.start, values.end);
   return {
     common,
     band,
     card: `<article class="metric comparison-metric">
-      <span class="label">${spec.title} · raya ${spec.variable} &gt; ${threshold} °C · área ${band.lower}–${band.upper} °C · ${latest.year}${values.mode === "anomaly" ? " · frente a mediana" : ""}</span>
+      <span class="label">${spec.title} · raya ${spec.variable} &gt; ${threshold} °C · banda &gt; ${band.lower} / &gt; ${band.upper} °C · ${latest.year}${values.mode === "anomaly" ? " · frente a mediana" : ""}</span>
       <div class="comparison-values">
         <div class="comparison-city"><span class="city-swatch city-a-swatch" aria-hidden="true"></span><span>${firstNameHtml}</span><strong>${valueA}<span class="unit"> ${spec.unit}</span></strong></div>
         <div class="comparison-city"><span class="city-swatch city-b-swatch" aria-hidden="true"></span><span>${secondNameHtml}</span><strong>${valueB}<span class="unit"> ${spec.unit}</span></strong></div>
@@ -666,9 +712,9 @@ function renderSourceNote(firstMeta, secondMeta, values, maxCommonRows, minCommo
   const baselineText = values.mode === "anomaly"
     ? ` Las anomalías restan la mediana ${values.baseline} del umbral central, calculada por separado para cada ubicación.`
     : "";
-  const maxBand = temperatureBand(values.maxThreshold);
-  const minBand = temperatureBand(values.minThreshold);
-  $("compare-source-note").textContent = `Fuente: ERA5 mediante Open-Meteo, en las coordenadas elegidas. Superficies mostradas: Tmax ${maxBand.lower}–${maxBand.upper} °C con raya > ${maxBand.center} °C, y Tmin ${minBand.lower}–${minBand.upper} °C con raya > ${minBand.center} °C. Las temperaturas centrales se ajustan al clima de ambas ubicaciones. Las superficies muestran sensibilidad al umbral, no incertidumbre; que se solapen significa que coinciden sus rangos de recuentos, no necesariamente los mismos días. Últimos años completos comunes: ${latestMax ?? "no disponible"} para días y ${latestMin ?? "no disponible"} para noches. Zona horaria diaria: ${timezones}.${baselineText} Los umbrales son estrictos: un valor igual al límite no cuenta. Las dos series se descargan juntas y la caché dura únicamente esta sesión del navegador.`;
+  const maxBand = temperatureBand(values.maxThreshold, "max");
+  const minBand = temperatureBand(values.minThreshold, "min");
+  $("compare-source-note").textContent = `Fuente: ERA5 mediante Open-Meteo, en las coordenadas elegidas. Superficies mostradas: Tmax > ${maxBand.lower} / > ${maxBand.upper} °C con raya > ${maxBand.center} °C, y Tmin > ${minBand.lower} / > ${minBand.upper} °C con raya > ${minBand.center} °C. En el ajuste automático, el límite superior conserva superaciones en al menos una misma ubicación durante todos los años completos comunes; algunos años pueden quedar en cero si eliges otro umbral manualmente. Las superficies muestran sensibilidad al umbral, no incertidumbre; que se solapen significa que coinciden sus rangos de recuentos, no necesariamente los mismos días. Últimos años completos comunes: ${latestMax ?? "no disponible"} para días y ${latestMin ?? "no disponible"} para noches. Zona horaria diaria: ${timezones}.${baselineText} Los umbrales son estrictos: un valor igual al límite no cuenta. Las dos series se descargan juntas y la caché dura únicamente esta sesión del navegador.`;
 }
 
 function pathFor(rows, side, threshold, x, y) {
@@ -763,6 +809,9 @@ function drawTemperatureBandChart(id, rows, band, kind, mode, startYear, endYear
   const secondLegendName = escapeHtml(chartLocationName(state.b, compact ? 18 : 32));
   const spec = comparisonSpec(kind);
   const modeDescription = mode === "absolute" ? "recuento anual" : `diferencia respecto a la mediana ${$("compare-baseline").value}`;
+  const selectionDescription = band.center === automaticThreshold(kind)
+    ? "La banda se ajustó automáticamente con los años completos comunes de ambas ubicaciones"
+    : "La banda se desplazó mediante la selección manual";
   const bandDescription = mode === "absolute"
     ? `la superficie une el recuento que supera ${band.lower} °C con el que supera ${band.upper} °C`
     : `la superficie aplica la mediana del umbral central a los recuentos que superan ${band.lower} °C y ${band.upper} °C`;
@@ -771,7 +820,7 @@ function drawTemperatureBandChart(id, rows, band, kind, mode, startYear, endYear
 
   $(id).innerHTML = `<svg viewBox="0 0 ${width} ${height}" role="img" aria-labelledby="${kind}-svg-title ${kind}-svg-desc">
     <title id="${kind}-svg-title">${spec.title}: áreas ${spec.variable} ${band.lower}–${band.upper} °C y rayas &gt; ${band.center} °C; ${escapeHtml(shortLocationName(state.a))} frente a ${escapeHtml(shortLocationName(state.b))}</title>
-    <desc id="${kind}-svg-desc">En ${modeDescription}, ${bandDescription}; la raya representa las superaciones de ${band.center} °C. Es una banda de sensibilidad al umbral, no de incertidumbre. ${escapeHtml(locationName(state.a))} aparece en naranja con raya continua y ${escapeHtml(locationName(state.b))} en azul con raya discontinua, entre ${startYear} y ${endYear}.</desc>
+    <desc id="${kind}-svg-desc">${selectionDescription}. En ${modeDescription}, ${bandDescription}; la raya representa las superaciones de ${band.center} °C. Es una banda de sensibilidad al umbral, no de incertidumbre. ${escapeHtml(locationName(state.a))} aparece en naranja con raya continua y ${escapeHtml(locationName(state.b))} en azul con raya discontinua, entre ${startYear} y ${endYear}.</desc>
     ${grid}
     <g class="compare-area-layer">
       <path class="compare-area compare-temperature-band compare-city-a-area" d="${firstArea}"><title>${escapeHtml(locationName(state.a))}: área entre ${spec.variable} &gt; ${band.lower} °C y &gt; ${band.upper} °C</title></path>

@@ -34,14 +34,14 @@
       <button id="compare-button" class="primary" type="button" disabled>Comparar</button>
       <details class="advanced-config">
         <summary>Configuración avanzada</summary>
-        <p class="advanced-help">Elige la temperatura central de cada gráfico. La raya usa ese umbral y la superficie muestra cómo cambia el recuento con umbrales 5 °C inferiores y superiores.</p>
+        <p id="threshold-band-help" class="advanced-help">El ajuste automático usa ambas ubicaciones y los años completos comunes para escoger una banda con superaciones observadas. La raya marca el umbral central; puedes elegir otra temperatura para desplazar la banda manualmente.</p>
         <div class="advanced-grid compare-advanced">
           <div class="field"><label for="compare-start">Desde</label><input id="compare-start" type="number" min="1940" value="1940"></div>
           <div class="field"><label for="compare-end">Hasta</label><input id="compare-end" type="number" min="1940"></div>
           <div class="field"><label for="compare-mode">Cómo comparar</label><select id="compare-mode"><option value="absolute">Recuento anual</option><option value="anomaly">Diferencia frente al pasado</option></select></div>
           <div class="field"><label for="compare-baseline">Periodo de referencia</label><select id="compare-baseline" disabled><option value="1991-2020">1991–2020</option><option value="1981-2010">1981–2010</option></select></div>
-          <div class="field"><label for="compare-max-threshold">Temperatura central · días (Tmax)</label><select id="compare-max-threshold" disabled><option value="auto">Automático según las ubicaciones</option></select></div>
-          <div class="field"><label for="compare-min-threshold">Temperatura central · noches (Tmin)</label><select id="compare-min-threshold" disabled><option value="auto">Automático según las ubicaciones</option></select></div>
+          <div class="field"><label for="compare-max-threshold">Umbral central · días (Tmax)</label><select id="compare-max-threshold" aria-describedby="threshold-band-help" disabled><option value="auto">Automático según las ubicaciones</option></select></div>
+          <div class="field"><label for="compare-min-threshold">Umbral central · noches (Tmin)</label><select id="compare-min-threshold" aria-describedby="threshold-band-help" disabled><option value="auto">Automático según las ubicaciones</option></select></div>
         </div>
       </details>
     </section>
@@ -54,13 +54,13 @@
         <p class="eyebrow">DÍAS CALUROSOS · EVOLUCIÓN ANUAL</p>
         <h2 id="compare-max-title">Días con temperatura máxima elevada</h2>
         <p id="compare-max-subtitle" class="threshold-note"></p>
-        <div id="compare-max-chart" class="chart compare-area-chart" aria-label="Comparación anual de días calurosos"></div>
+        <div id="compare-max-chart" class="chart compare-area-chart"></div>
       </section>
       <section class="panel chart-panel compare-area-panel">
         <p class="eyebrow">NOCHES CÁLIDAS · EVOLUCIÓN ANUAL</p>
         <h2 id="compare-min-title">Noches con temperatura mínima elevada</h2>
         <p id="compare-min-subtitle" class="threshold-note"></p>
-        <div id="compare-min-chart" class="chart compare-area-chart" aria-label="Comparación anual de noches cálidas"></div>
+        <div id="compare-min-chart" class="chart compare-area-chart"></div>
       </section>
       <p id="compare-source-note" class="source-note"></p>
     </section>
