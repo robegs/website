@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Compara días calurosos y noches cálidas entre dos ubicaciones y frente a su clima pasado.">
+  <title>Comparar ubicaciones · Calor</title>
+  <link rel="canonical" href="https://robegs.es/weather/compare.html">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="shell">
+    <header>
+      <p class="site-back"><a href="/">← robegs.es</a></p>
+      <p class="eyebrow">COMPARACIÓN CLIMÁTICA · ERA5</p>
+      <h1>Comparar ubicaciones</h1>
+      <p class="intro">Compara la frecuencia anual de días o noches cálidas en dos lugares, tanto en valores absolutos como respecto al clima pasado de cada lugar.</p>
+      <p class="page-link"><a href="index.html">← Volver al análisis individual</a></p>
+    </header>
+
+    <section class="panel compare-controls simple-compare" aria-label="Configuración de la comparación">
+      <div class="compare-station">
+        <label for="station-a">Primera ubicación</label>
+        <input id="station-a" type="search" autocomplete="off" value="Getafe" placeholder="Ej.: Getafe" aria-controls="results-a">
+        <div id="results-a" class="search-results" aria-live="polite"></div>
+        <p id="chosen-a" class="hint">Escribe para buscar.</p>
+      </div>
+      <div class="compare-station">
+        <label for="station-b">Segunda ubicación</label>
+        <input id="station-b" type="search" autocomplete="off" value="Madrid" placeholder="Ej.: Madrid" aria-controls="results-b">
+        <div id="results-b" class="search-results" aria-live="polite"></div>
+        <p id="chosen-b" class="hint">Escribe para buscar.</p>
+      </div>
+
+      <button id="compare-button" class="primary" type="button" disabled>Comparar</button>
+      <details class="advanced-config">
+        <summary>Configuración avanzada</summary>
+        <p class="advanced-help">Los umbrales se ajustan automáticamente al rango observado de ambas ubicaciones. Cambia aquí el periodo, el tipo de temperatura, el modo o las líneas visibles.</p>
+        <div class="advanced-grid compare-advanced">
+          <div class="field"><label for="compare-start">Desde</label><input id="compare-start" type="number" min="1940" value="1940"></div>
+          <div class="field"><label for="compare-end">Hasta</label><input id="compare-end" type="number" min="1940"></div>
+          <div class="field"><label for="compare-kind">Serie</label><select id="compare-kind"><option value="max">Días · temperatura máxima</option><option value="min">Noches · temperatura mínima</option></select></div>
+          <div class="field"><label for="compare-mode">Cómo comparar</label><select id="compare-mode"><option value="absolute">Recuento anual</option><option value="anomaly">Diferencia frente al pasado</option></select></div>
+          <div class="field"><label for="compare-baseline">Periodo de referencia</label><select id="compare-baseline" disabled><option value="1991-2020">1991–2020</option><option value="1981-2010">1981–2010</option></select></div>
+          <div class="field"><label for="compare-base">Umbral del resumen</label><select id="compare-base"></select></div>
+          <fieldset class="field threshold-config">
+            <legend>Umbrales visibles</legend>
+            <div id="threshold-controls" class="threshold-options" role="group" aria-label="Umbrales visibles"></div>
+            <div class="threshold-actions"><button id="threshold-main" type="button">Principales</button><button id="threshold-all" type="button">Todos</button><button id="threshold-none" type="button">Solo resumen</button></div>
+          </fieldset>
+        </div>
+      </details>
+    </section>
+
+    <p id="compare-status" class="status" role="status">Selecciona las dos ubicaciones.</p>
+
+    <section id="comparison" hidden>
+      <div id="compare-summary" class="summary"></div>
+      <section class="panel chart-panel">
+        <p class="eyebrow">EVOLUCIÓN ANUAL</p>
+        <h2 id="compare-title">Comparación</h2>
+        <p id="compare-subtitle" class="threshold-note"></p>
+        <div id="compare-chart" class="chart" aria-label="Gráfico de comparación anual"></div>
+      </section>
+      <p id="compare-source-note" class="source-note"></p>
+    </section>
+  </main>
+  <script src="compare.js"></script>
+</body>
+</html>

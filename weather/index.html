@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Compara el calor del año actual con el clima histórico de cualquier ubicación.">
+    <title>Calor por ubicación</title>
+    <link rel="canonical" href="https://robegs.es/weather/">
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <main class="shell">
+      <header>
+        <p class="site-back"><a href="/">← robegs.es</a></p>
+        <p id="source-eyebrow" class="eyebrow">ANÁLISIS CLIMÁTICO</p>
+        <h1>¿Cuánto calor hace ahora?</h1>
+        <p class="intro">Compara el año actual con el pasado, observa su posición histórica y analiza cómo han cambiado los días calurosos y las noches cálidas.</p>
+        <p class="page-link"><a href="compare.html">Comparar dos ubicaciones →</a></p>
+      </header>
+
+      <section class="panel controls simple-controls" aria-label="Configuración del análisis">
+        <div class="field station-field">
+          <label for="station-search">Ubicación</label>
+          <div class="search-row">
+            <input id="station-search" type="search" autocomplete="off" placeholder="Ej.: Madrid, Getafe o Barajas" value="Getafe" aria-controls="search-results">
+            <button id="search-button" type="button">Buscar</button>
+          </div>
+          <div id="search-results" class="search-results" aria-live="polite"></div>
+          <p id="selected-station" class="hint">Escribe para ver sugerencias y selecciona una ubicación.</p>
+        </div>
+        <button id="analyse-button" class="primary" type="button" disabled>Analizar</button>
+        <details class="advanced-config">
+          <summary>Configuración avanzada</summary>
+          <p class="advanced-help">Los umbrales se ajustan automáticamente al rango histórico de la ubicación. Abre estas opciones solo si quieres cambiar la fuente, los años o el umbral principal.</p>
+          <div class="advanced-grid">
+            <div class="field"><label for="start-year">Histórico desde</label><input id="start-year" type="number" min="1940" value="1940"></div>
+            <div class="field"><label for="end-year">Histórico hasta</label><input id="end-year" type="number" min="1940"></div>
+            <div class="field"><label for="data-source">Fuente</label><select id="data-source"><option value="era5">ERA5 · Open-Meteo</option><option value="nasa">NASA POWER</option></select></div>
+            <div class="field"><label for="baseline">Periodo de referencia</label><select id="baseline"><option value="1991-2020">1991–2020</option><option value="1981-2010">1981–2010</option><option value="1961-1990">1961–1990</option><option value="custom">Personalizado</option></select></div>
+            <div id="custom-baseline" class="custom-baseline" hidden><div class="field"><label for="baseline-start">Referencia desde</label><input id="baseline-start" type="number" value="1991"></div><div class="field"><label for="baseline-end">Referencia hasta</label><input id="baseline-end" type="number" value="2020"></div></div>
+            <div class="field"><label for="focus-max">Umbral diurno principal</label><select id="focus-max"></select></div>
+            <div class="field"><label for="focus-min">Umbral nocturno principal</label><select id="focus-min"></select></div>
+          </div>
+        </details>
+      </section>
+
+      <p id="status" class="status" role="status">Selecciona una ubicación.</p>
+
+      <section id="analysis" hidden>
+        <section class="section-heading"><p class="eyebrow">EL AÑO ACTUAL FRENTE AL PASADO</p><h2 id="current-title">Situación hasta la última fecha disponible</h2></section>
+        <div id="current-summary" class="summary current-summary"></div>
+        <div id="current-narrative" class="explanation"></div>
+
+        <section class="dashboard-grid">
+          <article class="panel chart-panel compact-panel"><p class="eyebrow">DÍAS CALUROSOS ACUMULADOS</p><h2 id="max-progress-title">Tmax</h2><div id="max-progress" class="chart progress-chart"></div></article>
+          <article class="panel chart-panel compact-panel"><p class="eyebrow">NOCHES CÁLIDAS ACUMULADAS</p><h2 id="min-progress-title">Tmin</h2><div id="min-progress" class="chart progress-chart"></div></article>
+        </section>
+
+        <section class="panel indicators-panel"><div class="chart-heading"><div><p class="eyebrow">IMPACTO DEL CALOR ESTE AÑO</p><h2>Duración, intensidad y recuperación nocturna</h2></div><button id="share-button" type="button" class="secondary">Copiar enlace</button></div><div id="heat-indicators" class="indicator-grid"></div></section>
+
+        <section class="panel chart-panel"><div class="chart-heading"><div><p class="eyebrow">TEMPERATURA MÁXIMA</p><h2>Días por encima de cada umbral</h2></div><button id="download-button" type="button" class="secondary">Descargar CSV</button></div><div id="max-chart" class="chart" aria-label="Gráfico anual de temperaturas máximas"></div><div id="max-explanation" class="explanation"></div></section>
+        <section class="panel chart-panel"><p class="eyebrow">TEMPERATURA MÍNIMA</p><h2>Noches por encima de cada umbral</h2><div id="min-chart" class="chart" aria-label="Gráfico anual de temperaturas mínimas"></div><div id="min-explanation" class="explanation"></div></section>
+
+        <p id="source-note" class="source-note"></p>
+      </section>
+    </main>
+    <script src="app.js"></script>
+  </body>
+</html>

@@ -1,0 +1,235 @@
+:root {
+  --ink: #17231e;
+  --muted: #607168;
+  --panel: #fffefa;
+  --line: #d9ddd2;
+  --accent: #d45228;
+  --night: #335c9b;
+  --range: #dce8db;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: linear-gradient(135deg, #edf0e6, #f7f5ef 55%);
+  color: var(--ink);
+  font: 16px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+.shell {
+  width: min(1220px, calc(100% - 32px));
+  margin: 0 auto;
+  padding: 52px 0 64px;
+}
+
+header { max-width: 850px; margin-bottom: 30px; }
+.site-back { margin: 0 0 18px; }
+.site-back a { color: #355f4b; font-size: .9rem; font-weight: 750; }
+h1 { font: 700 clamp(2.5rem, 6vw, 4.8rem)/.96 Georgia, serif; margin: 6px 0 16px; letter-spacing: -.04em; }
+h2 { margin: 0; font: 600 1.22rem/1.2 Georgia, serif; }
+.eyebrow { color: #947043; font-size: .72rem; font-weight: 800; letter-spacing: .13em; margin: 0; }
+.intro { color: var(--muted); font-size: 1.08rem; margin: 0; }
+.page-link { margin: 18px 0 0; }
+.page-link a { color: #355f4b; font-weight: 700; }
+
+.panel {
+  background: #fffefadd;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  box-shadow: 0 14px 36px #2a3a2d12;
+}
+
+.controls {
+  display: grid;
+  grid-template-columns: minmax(300px, 2fr) repeat(3, minmax(115px, 1fr));
+  gap: 15px;
+  align-items: end;
+  padding: 20px;
+}
+
+.station-field { grid-column: span 2; align-self: start; }
+.field label,
+.compare-station label { display: block; color: var(--muted); font-size: .82rem; font-weight: 700; margin-bottom: 6px; }
+.search-row { display: flex; gap: 8px; }
+
+input,
+select {
+  min-width: 0;
+  width: 100%;
+  border: 1px solid #bdc7bb;
+  border-radius: 8px;
+  background: #fff;
+  color: var(--ink);
+  font: inherit;
+  padding: 9px 10px;
+}
+
+button {
+  border: 1px solid #aeb9ae;
+  border-radius: 8px;
+  background: #fff;
+  color: var(--ink);
+  cursor: pointer;
+  font: 700 .9rem/1 inherit;
+  padding: 10px 13px;
+}
+
+button:hover { border-color: var(--ink); }
+button:disabled { opacity: .5; cursor: not-allowed; }
+.primary { background: var(--ink); color: #fff; border-color: var(--ink); min-height: 42px; }
+.secondary { white-space: nowrap; }
+
+.custom-baseline {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  grid-column: span 2;
+}
+
+.custom-baseline[hidden] { display: none; }
+.hint { color: var(--muted); font-size: .8rem; margin: 7px 0 0; }
+.search-results { position: relative; z-index: 2; }
+.result { width: 100%; text-align: left; border-radius: 5px; border-color: var(--line); border-top: 0; padding: 8px 10px; }
+.result small { color: var(--muted); display: block; font-weight: 400; }
+.status { color: var(--muted); margin: 18px 2px; min-height: 1.45em; }
+.status.error { color: #a61e12; }
+
+/* Keep the everyday task prominent; specialist controls stay collapsed by default. */
+.simple-controls {
+  grid-template-columns: minmax(300px, 1fr) auto;
+  align-items: start;
+}
+
+.simple-controls > .station-field,
+.simple-compare > .compare-station { grid-column: auto; }
+
+.simple-controls > .primary,
+.simple-compare > .primary { margin-top: 24px; }
+
+.advanced-config {
+  grid-column: 1 / -1;
+  border-top: 1px solid var(--line);
+  margin-top: 3px;
+  padding-top: 12px;
+}
+
+.advanced-config summary {
+  width: fit-content;
+  margin-left: 16px;
+  color: #355f4b;
+  cursor: pointer;
+  font-size: .9rem;
+  font-weight: 750;
+  list-style-position: outside;
+}
+
+.advanced-config summary:hover,
+.advanced-config summary:focus-visible { color: var(--ink); }
+.advanced-help { color: var(--muted); font-size: .82rem; margin: 10px 0 0; }
+
+.advanced-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(120px, 1fr));
+  gap: 14px;
+  align-items: end;
+  margin-top: 14px;
+}
+
+.section-heading { margin: 30px 2px 15px; }
+.summary { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 18px; }
+.metric { border-left: 4px solid var(--accent); background: var(--panel); border-radius: 10px; padding: 15px; }
+.metric:nth-child(even),
+.metric.night { border-color: var(--night); }
+.metric .value { display: block; font: 700 1.75rem/1 Georgia, serif; margin: 7px 0; }
+.metric .label,
+.metric small { color: var(--muted); font-size: .8rem; }
+.metric small { display: block; }
+
+.dashboard-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+.chart-panel,
+.indicators-panel { padding: 22px; margin-top: 20px; }
+.compact-panel { min-width: 0; }
+.chart-heading { display: flex; justify-content: space-between; gap: 12px; align-items: center; }
+.chart { margin-top: 15px; overflow-x: auto; }
+.chart svg { min-width: 760px; width: 100%; height: 420px; display: block; }
+.progress-chart svg { min-width: 520px; height: 300px; }
+.axis { fill: var(--muted); font-size: 11px; }
+.grid { stroke: #dce1d8; stroke-width: 1; }
+.series { fill: none; stroke-width: 1.55; }
+.average { fill: none; stroke-width: 3; stroke-dasharray: 7 5; opacity: .92; }
+.range-band { fill: var(--range); opacity: .78; }
+.baseline-line { fill: none; stroke: #66746c; stroke-width: 2; stroke-dasharray: 6 4; }
+.current-line { fill: none; stroke: var(--accent); stroke-width: 3; }
+.current-point { fill: var(--accent); }
+.projection-whisker { stroke-width: 2; }
+.projection-link { stroke-width: 1.5; stroke-dasharray: 3 4; }
+.projection-label { font-size: 10px; font-weight: 800; }
+.legend { font-size: 11px; }
+.explanation { border-left: 4px solid #947043; background: #f4f0e6; border-radius: 7px; margin-top: 12px; padding: 11px 14px; color: #4e5148; font-size: .92rem; }
+.explanation p { margin: 0; }
+.indicator-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 16px; }
+.indicator { background: #f7f5ef; border: 1px solid var(--line); border-radius: 9px; padding: 13px; }
+.indicator span,
+.indicator small { display: block; color: var(--muted); font-size: .78rem; }
+.indicator strong { display: block; font: 700 1.25rem Georgia, serif; margin: 5px 0; }
+.source-note { color: var(--muted); font-size: .82rem; margin: 18px 2px; }
+
+.compare-controls {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(120px, 1fr));
+  gap: 16px;
+  align-items: end;
+  padding: 20px;
+}
+
+.compare-station { grid-column: span 2; }
+.simple-compare { grid-template-columns: 1fr 1fr auto; align-items: start; }
+.compare-a,
+.compare-b { fill: none; stroke-width: 2.2; }
+.compare-b { stroke-dasharray: 7 5; }
+.threshold-config { grid-column: 1 / -1; min-width: 0; margin: 0; padding: 0; border: 0; }
+.threshold-config legend { color: var(--muted); font-size: .82rem; font-weight: 700; padding: 0; }
+.threshold-options { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
+.threshold-options label { font-size: .8rem; color: var(--muted); white-space: nowrap; }
+.threshold-options input { width: auto; }
+.threshold-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 9px; }
+.mode-note { font-size: .82rem; color: var(--muted); }
+
+@media (max-width: 950px) {
+  .controls,
+  .compare-controls { grid-template-columns: repeat(2, 1fr); }
+  .station-field,
+  .compare-station { grid-column: span 2; }
+  .simple-controls { grid-template-columns: minmax(0, 1fr) auto; }
+  .simple-controls > .station-field,
+  .simple-compare > .compare-station { grid-column: auto; }
+  .simple-compare { grid-template-columns: 1fr 1fr; }
+  .simple-compare > .primary { grid-column: 1 / -1; margin-top: 0; }
+  .advanced-grid { grid-template-columns: repeat(2, minmax(120px, 1fr)); }
+  .summary { grid-template-columns: 1fr 1fr; }
+  .dashboard-grid { grid-template-columns: 1fr; }
+  .indicator-grid { grid-template-columns: 1fr 1fr; }
+}
+
+@media (max-width: 620px) {
+  .shell { width: min(100% - 24px, 1220px); padding-top: 30px; }
+  .controls,
+  .compare-controls,
+  .simple-controls,
+  .simple-compare,
+  .advanced-grid,
+  .summary { grid-template-columns: 1fr; }
+  .station-field,
+  .compare-station,
+  .simple-controls > .station-field,
+  .simple-compare > .compare-station,
+  .simple-compare > .primary,
+  .custom-baseline { grid-column: auto; }
+  .simple-controls > .primary,
+  .simple-compare > .primary { margin-top: 0; }
+  .custom-baseline { grid-template-columns: 1fr; }
+  .dashboard-grid,
+  .indicator-grid { grid-template-columns: 1fr; }
+  .chart-heading { align-items: flex-start; flex-direction: column; }
+}
