@@ -24,8 +24,6 @@ body {
 }
 
 header { max-width: 850px; margin-bottom: 30px; }
-.site-back { margin: 0 0 18px; }
-.site-back a { color: #355f4b; font-size: .9rem; font-weight: 750; }
 h1 { font: 700 clamp(2.5rem, 6vw, 4.8rem)/.96 Georgia, serif; margin: 6px 0 16px; letter-spacing: -.04em; }
 h2 { margin: 0; font: 600 1.22rem/1.2 Georgia, serif; }
 .eyebrow { color: #947043; font-size: .72rem; font-weight: 800; letter-spacing: .13em; margin: 0; }

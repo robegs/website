@@ -82,8 +82,3 @@ This repository will host the personal professional website for **Dr. Roberto Go
   - `monitoring/last_snapshot.json`
   - `monitoring/latest_report.md`
 - If it detects changes, it opens a GitHub issue to review and update website content.
-
-## Hosted Tools
-
-- `/weather/` — client-side historical heat analysis for one location.
-- `/weather/compare.html` — comparison of two locations using shared adaptive temperature thresholds.
