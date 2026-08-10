@@ -21,17 +21,28 @@ jobs:
 
       - name: Install Chromium (to provide headless browser for Lighthouse)
         run: |
-          sudo apt-get update
+          set -e
+          echo "Updating apt and attempting to install chromium packages"
+          sudo apt-get update -y || true
           sudo apt-get install -y chromium chromium-browser || true
+          echo "Checking for available browser binaries"
           for CHROME in chromium-browser chromium google-chrome-stable; do
             if command -v "$CHROME" >/dev/null 2>&1; then
+              echo "Found browser binary: $CHROME -> $(command -v $CHROME)"
               echo "CHROME_PATH=$(command -v $CHROME)" >> "$GITHUB_ENV"
-              echo "Using browser: $CHROME"
-              exit 0
+              break
             fi
           done
-          echo "No Chromium/Chrome binary found in PATH"
-          exit 1
+          if [ -z "${CHROME_PATH:-}" ]; then
+            echo "Warning: No Chromium/Chrome binary found in PATH. LHCI may attempt to use a downloaded chromium or fail later. Continuing to LHCI step for additional debugging."
+            # Print available binaries for debugging
+            echo "Which chromium-browser: $(which chromium-browser || echo 'not found')"
+            echo "Which chromium: $(which chromium || echo 'not found')"
+            echo "Which google-chrome-stable: $(which google-chrome-stable || echo 'not found')"
+            echo "Listing /usr/bin for debugging:"; ls -la /usr/bin | grep -i chrome || true
+          else
+            echo "Using CHROME_PATH=${CHROME_PATH}"
+          fi
 
       - name: Install LHCI CLI (npx wrapper)
         run: npx --yes @lhci/cli@0.11.0 --version
