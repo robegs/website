@@ -12,7 +12,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup Node.js
         uses: actions/setup-node@v5
@@ -22,16 +22,16 @@ jobs:
       - name: Install Chromium (to provide headless browser for Lighthouse)
         run: |
           sudo apt-get update
-          sudo apt-get install -y chromium-browser chromium google-chrome-stable || true
-
-      - name: Detect Chromium binary and set CHROME_PATH
-        run: |
-          CHROME_PATH=$(which chromium-browser || which chromium || which google-chrome-stable || true)
-          if [ -z "$CHROME_PATH" ]; then
-            echo "No Chromium/Chrome binary found in PATH"
-            exit 0
-          fi
-          echo "CHROME_PATH=$CHROME_PATH" >> $GITHUB_ENV
+          sudo apt-get install -y chromium chromium-browser || true
+          for CHROME in chromium-browser chromium google-chrome-stable; do
+            if command -v "$CHROME" >/dev/null 2>&1; then
+              echo "CHROME_PATH=$(command -v $CHROME)" >> "$GITHUB_ENV"
+              echo "Using browser: $CHROME"
+              exit 0
+            fi
+          done
+          echo "No Chromium/Chrome binary found in PATH"
+          exit 1
 
       - name: Install LHCI CLI (npx wrapper)
         run: npx --yes @lhci/cli@0.11.0 --version
@@ -39,4 +39,4 @@ jobs:
       - name: Run Lighthouse CI
         env:
           CHROME_PATH: ${{ env.CHROME_PATH }}
-        run: npx --yes @lhci/cli@0.11.0 autorun --config=lighthouserc.json
+        run: npx --yes @lhci/cli@0.11.0 autorun --config=lighthouserc.json --chrome-flags="--no-sandbox"
