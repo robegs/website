@@ -17,10 +17,10 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v5
         with:
-          node-version: "20"
+          node-version: "24"
 
-      - name: Install Lighthouse CI
-        run: npm install -g @lhci/cli@0.11.0
+      - name: Install dependencies (using npx to avoid global installs)
+        run: npx --yes @lhci/cli@0.11.0 --version
 
       - name: Run Lighthouse CI
-        run: lhci autorun --config=lighthouserc.json
+        run: npx --yes @lhci/cli@0.11.0 autorun --config=lighthouserc.json
