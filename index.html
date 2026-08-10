@@ -12,6 +12,7 @@
 
     <!-- Canonical URL -->
     <link rel="canonical" href="https://robegs.es" />
+    <link rel="preload" as="image" href="assets/images/roberto-gonzalez-sanchez-nec-1200.webp" imagesrcset="assets/images/roberto-gonzalez-sanchez-nec-600.webp 600w, assets/images/roberto-gonzalez-sanchez-nec-1200.webp 1200w" imagesizes="(max-width: 40rem) 100vw, 600px" />
 
     <!-- Plausible Analytics (privacy-first) -->
     <script async defer data-domain="robegs.es" src="https://plausible.io/js/plausible.js"></script>
@@ -87,7 +88,10 @@
           </div>
           <div class="hero-card">
             <div class="portrait">
-              <img src="assets/images/roberto-gonzalez-sanchez-nec.jpg" alt="Dr. Roberto González Sánchez" />
+              <picture>
+                <source type="image/webp" srcset="assets/images/roberto-gonzalez-sanchez-nec-600.webp 600w, assets/images/roberto-gonzalez-sanchez-nec-1200.webp 1200w" sizes="(max-width: 40rem) 100vw, 600px" />
+                <img src="assets/images/roberto-gonzalez-sanchez-nec.jpg" alt="Dr. Roberto González Sánchez" fetchpriority="high" decoding="async" />
+              </picture>
             </div>
             <div class="hero-card-body">
               <p class="label">Focus</p>
@@ -209,7 +213,10 @@
           </div>
           <div class="cards">
             <article class="card">
-              <img class="project-logo" src="assets/images/logos/pimcity.png" alt="PIMCity logo" loading="lazy" />
+              <picture>
+                <source type="image/webp" srcset="assets/images/logos/pimcity.webp" />
+                <img class="project-logo" src="assets/images/logos/pimcity.png" alt="PIMCity logo" loading="lazy" />
+              </picture>
               <h3>PIMCity</h3>
               <p>H2020 project building next‑generation personal data platforms and the EasyPIMS demonstrator.</p>
               <p class="card-meta">Role: Technical Coordinator (past).</p>
@@ -228,7 +235,10 @@
               <a class="card-link" href="https://cordis.europa.eu/project/id/101017171" target="_blank" rel="noreferrer">Project fact sheet</a>
             </article>
             <article class="card">
-              <img class="project-logo" src="assets/images/logos/smooth.png" alt="SMOOTH GDPR logo" loading="lazy" />
+              <picture>
+                <source type="image/webp" srcset="assets/images/logos/smooth.webp" />
+                <img class="project-logo" src="assets/images/logos/smooth.png" alt="SMOOTH GDPR logo" loading="lazy" />
+              </picture>
               <h3>SMOOTH (GDPR)</h3>
               <p>GDPR compliance tools and cloud platform for micro‑enterprises.</p>
               <p class="card-meta">Role: WP Leader.</p>

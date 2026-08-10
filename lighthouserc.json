@@ -1,0 +1,15 @@
+{
+  "ci": {
+    "collect": {
+      "numberOfRuns": 1,
+      "url": ["https://robegs.es"],
+      "settings": {
+        "emulatedFormFactor": "mobile",
+        "throttlingMethod": "provided"
+      }
+    },
+    "upload": {
+      "target": "temporary-public-storage"
+    }
+  }
+}

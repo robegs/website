@@ -8,6 +8,26 @@ if (menuToggle && nav) {
   });
 }
 
+function logPlausibleEvent(eventName, props = {}) {
+  if (typeof window.plausible === "function") {
+    window.plausible(eventName, { props });
+  }
+}
+
+function trackClickEvents(selector, eventName) {
+  document.querySelectorAll(selector).forEach((element) => {
+    if (!element.dataset.plausibleTracked) {
+      element.addEventListener("click", () => {
+        logPlausibleEvent(eventName, { href: element.href || element.dataset.href || "unknown" });
+      });
+      element.dataset.plausibleTracked = "true";
+    }
+  });
+}
+
+trackClickEvents(".hero-actions .btn.primary", "Contact Click");
+trackClickEvents("a[target='_blank']", "Outbound Link");
+
 const observer = new IntersectionObserver(
   (entries) => {
     entries.forEach((entry) => {
