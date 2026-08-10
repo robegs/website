@@ -76,7 +76,14 @@ This repository will host the personal professional website for **Dr. Roberto Go
 3. Grant access or paste Google Scholar/LinkedIn details to complete publications and experience sections.
 4. Choose a visual style and build the site structure.
 
+## Performance and Hosting
+
+- Lighthouse CI is configured in `.github/workflows/lighthouse-ci.yml` and runs on pull requests, pushes to `main`, and workflow dispatch.
+- Baseline performance is captured for `https://robegs.es` using the site configuration in `lighthouserc.json`.
+- Hosting and security header guidance is available in `HOSTING_AND_DEPLOYMENT.md`.
+
 ## Automated Content Monitoring
+
 - A GitHub Actions workflow runs on the 1st and 16th of each month (`.github/workflows/content-monitor.yml`).
 - It checks monitored sources in `monitoring/sources.json` and updates:
   - `monitoring/last_snapshot.json`
