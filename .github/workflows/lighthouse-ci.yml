@@ -19,8 +19,24 @@ jobs:
         with:
           node-version: "24"
 
-      - name: Install dependencies (using npx to avoid global installs)
+      - name: Install Chromium (to provide headless browser for Lighthouse)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y chromium-browser chromium google-chrome-stable || true
+
+      - name: Detect Chromium binary and set CHROME_PATH
+        run: |
+          CHROME_PATH=$(which chromium-browser || which chromium || which google-chrome-stable || true)
+          if [ -z "$CHROME_PATH" ]; then
+            echo "No Chromium/Chrome binary found in PATH"
+            exit 0
+          fi
+          echo "CHROME_PATH=$CHROME_PATH" >> $GITHUB_ENV
+
+      - name: Install LHCI CLI (npx wrapper)
         run: npx --yes @lhci/cli@0.11.0 --version
 
       - name: Run Lighthouse CI
+        env:
+          CHROME_PATH: ${{ env.CHROME_PATH }}
         run: npx --yes @lhci/cli@0.11.0 autorun --config=lighthouserc.json
