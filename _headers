@@ -1,6 +1,5 @@
-/*
-  Netlify _headers example. Adapt to your hosting provider.
-*/
+/* Netlify _headers example. Adapt to your hosting provider. */
+
 /* Apply to all routes */
 /* / */
   Strict-Transport-Security: max-age=63072000; includeSubDomains; preload
