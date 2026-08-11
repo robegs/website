@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="A visual field guide to the browser games in Roberto González Sánchez's Experiments Lab." />
+    <title>Game Field Guide | Experiments Lab</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="games-guide.css" />
+  </head>
+  <body>
+    <div class="page">
+      <header class="site-header">
+        <a class="brand" href="experiments.html">RGS <span>Experiments Lab</span></a>
+        <nav class="nav" aria-label="Guide navigation">
+          <a href="experiments.html">Play games</a>
+          <a href="#guide">Field guide</a>
+        </nav>
+      </header>
+
+      <main>
+        <section class="hero">
+          <p class="eyebrow">Player orientation · design audit</p>
+          <h1>Game Field Guide</h1>
+          <p>
+            A visual map of the seven browser-game experiments: what each one asks of the player,
+            how a run unfolds, what already works well, and where the experience needs another pass.
+          </p>
+          <div class="legend" aria-label="Guide legend">
+            <span><i class="dot strong"></i>Strong foundation</span>
+            <span><i class="dot improve"></i>Most valuable improvement</span>
+            <span><i class="dot controls"></i>Primary interaction</span>
+          </div>
+        </section>
+
+        <section class="guide-intro" id="guide">
+          <div>
+            <p class="section-kicker">How to use this guide</p>
+            <h2>Choose by the kind of challenge you want.</h2>
+          </div>
+          <p>Every card shows the core loop from left to right. The audit is based on the shipped game code and interface, so it distinguishes implemented strengths from player-facing friction.</p>
+        </section>
+
+        <section class="game-grid" aria-label="Game guides">
+          <article class="game-card brick">
+            <div class="card-heading"><span class="number">01</span><div><p class="section-kicker">Arcade campaign</p><h2>Brick Breaker</h2></div></div>
+            <div class="visual brick-visual" aria-label="Paddle, ball, power-up, and bricks diagram"><span class="bricks">■■■■■■<br />■■■■■■</span><span class="ball">●</span><span class="paddle"></span><span class="power">+</span></div>
+            <p class="summary">Clear a ten-level brick campaign, protect the ball, and use drops to build score and survivability.</p>
+            <div class="flow"><span>Move paddle</span><b>→</b><span>Break bricks</span><b>→</b><span>Catch power-ups</span><b>→</b><span>Beat bosses</span></div>
+            <div class="meta"><span>Mouse / touch or A–D / arrows</span><span>Space or click launches</span></div>
+            <div class="audit"><div><h3>Works</h3><p>Real campaign structure, combos, seven power-ups, boss encounters, local best score, pause, and touch controls create a complete arcade loop.</p></div><div><h3>Needs attention</h3><p>The debug-level selector and large HUD compete with play. Power-up effects are not introduced before they matter.</p></div></div>
+            <p class="next"><strong>Best next step:</strong> replace the visible debug picker with a hidden developer mode and add a first-drop tooltip.</p>
+            <a class="play" href="experiments.html#brick">Play Brick Breaker <span>→</span></a>
+          </article>
+
+          <article class="game-card defender">
+            <div class="card-heading"><span class="number">02</span><div><p class="section-kicker">Strategy defense</p><h2>Path Guardians TD</h2></div></div>
+            <div class="visual defender-visual" aria-label="Winding enemy path with tower coverage diagram"><span class="route"></span><i class="tower one"></i><i class="tower two"></i><i class="tower three"></i><b class="enemy">›</b></div>
+            <p class="summary">Place tower classes around the route, survive fifteen waves, then adapt upgrades to enemy behaviour.</p>
+            <div class="flow"><span>Choose tower</span><b>→</b><span>Place off-road</span><b>→</b><span>Start wave</span><b>→</b><span>Upgrade & react</span></div>
+            <div class="meta"><span>Pointer / touch placement</span><span>Five tower classes · two maps</span></div>
+            <div class="audit"><div><h3>Works</h3><p>It has meaningful tactical breadth: difficulty modes, map routes, tower progression, enemy archetypes, speed controls, seeded runs, and active abilities.</p></div><div><h3>Needs attention</h3><p>New players face many controls, statistics, and tower choices before learning a first placement. The standalone and mobile editions duplicate the same game logic.</p></div></div>
+            <p class="next"><strong>Best next step:</strong> add a three-wave guided opening and consolidate the standalone variants around one shared implementation.</p>
+            <a class="play" href="experiments.html#defender">Play Path Guardians TD <span>→</span></a>
+          </article>
+
+          <article class="game-card rush">
+            <div class="card-heading"><span class="number">03</span><div><p class="section-kicker">Reaction test</p><h2>Target Rush</h2></div></div>
+            <div class="visual rush-visual" aria-label="Target reticle diagram"><span class="reticle">◎</span><i class="cursor">↖</i><b>30s</b></div>
+            <p class="summary">Hit the target as it relocates. Build the highest score before the thirty-second round ends.</p>
+            <div class="flow"><span>Start round</span><b>→</b><span>Spot target</span><b>→</b><span>Click</span><b>→</b><span>Beat best score</span></div>
+            <div class="meta"><span>Pointer / tap</span><span>30-second rounds</span></div>
+            <div class="audit"><div><h3>Works</h3><p>The rules are immediately legible, every target is a real button, and the persistent best score makes repeat attempts frictionless.</p></div><div><h3>Needs attention</h3><p>It is a single fixed challenge: no speed curve, target variety, accuracy measure, or keyboard alternative. The reset-best button is easy to trigger by mistake.</p></div></div>
+            <p class="next"><strong>Best next step:</strong> add selectable difficulty, hit accuracy, and a protected score-reset confirmation.</p>
+            <a class="play" href="experiments.html#rush">Play Target Rush <span>→</span></a>
+          </article>
+
+          <article class="game-card memory">
+            <div class="card-heading"><span class="number">04</span><div><p class="section-kicker">Memory sequence</p><h2>Cipher Memory</h2></div></div>
+            <div class="visual memory-visual" aria-label="Four symbol memory grid diagram"><span>A</span><span>B</span><span>C</span><span>D</span><i>1 · 2 · 3 · …</i></div>
+            <p class="summary">Watch the flashing four-symbol cipher and replay it perfectly through ten levels.</p>
+            <div class="flow"><span>Watch sequence</span><b>→</b><span>Recall order</span><b>→</b><span>Repeat symbols</span><b>→</b><span>Extend sequence</span></div>
+            <div class="meta"><span>Pointer / tap</span><span>Fixed goal: level 10</span></div>
+            <div class="audit"><div><h3>Works</h3><p>The locked playback state prevents accidental input, the visual feedback is clear, and the completion target gives the small game a real ending.</p></div><div><h3>Needs attention</h3><p>Only four letters and one fixed pacing limit replay value. A wrong answer resets the whole sequence without a gentle practice option.</p></div></div>
+            <p class="next"><strong>Best next step:</strong> add adaptive sequence speed, optional audio cues, and a casual checkpoint mode.</p>
+            <a class="play" href="experiments.html#memory">Play Cipher Memory <span>→</span></a>
+          </article>
+
+          <article class="game-card platformer">
+            <div class="card-heading"><span class="number">05</span><div><p class="section-kicker">Side-scrolling platformer</p><h2>Pixel Platformer</h2></div></div>
+            <div class="visual platformer-visual" aria-label="Character jumping between pixel platforms diagram"><span class="pixel-hero">▣</span><i class="coin">●</i><b class="platform p1"></b><b class="platform p2"></b><b class="platform p3"></b></div>
+            <p class="summary">Collect coins, avoid hazards, use jump and dash timing, and progress across authored platforming levels.</p>
+            <div class="flow"><span>Move & jump</span><b>→</b><span>Collect</span><b>→</b><span>Dash past hazards</span><b>→</b><span>Reach exit</span></div>
+            <div class="meta"><span>Arrows / A–D · jump · dash</span><span>Touch controls · level editor</span></div>
+            <div class="audit"><div><h3>Works</h3><p>This is the most feature-rich conventional game: pixel assets, lives, coins, timing, audio controls, touch buttons, multi-level support, and a sharable visual editor.</p></div><div><h3>Needs attention</h3><p>Play and level-authoring tools share one surface, making the first session visually busy. Asset loading is a visible dependency before a run can start.</p></div></div>
+            <p class="next"><strong>Best next step:</strong> move the editor behind a separate “Create” mode and show a concise first-run control card.</p>
+            <a class="play" href="experiments.html#platformer">Play Pixel Platformer <span>→</span></a>
+          </article>
+
+          <article class="game-card rally">
+            <div class="card-heading"><span class="number">06</span><div><p class="section-kicker">Endless hover runner</p><h2>Neon Rift Rally</h2></div></div>
+            <div class="visual rally-visual" aria-label="Hover vehicle moving through neon lanes diagram"><span class="lane l1"></span><span class="lane l2"></span><span class="lane l3"></span><b class="ship">◆</b><i class="gate">◇</i></div>
+            <p class="summary">Thread a hovercraft through hazards, jump for high gates, manage energy, and grow a near-miss score multiplier.</p>
+            <div class="flow"><span>Steer lanes</span><b>→</b><span>Avoid hazards</span><b>→</b><span>Collect gates</span><b>→</b><span>Push sectors</span></div>
+            <div class="meta"><span>Arrows / A–D · Space / Shift</span><span>Modes · seeded daily runs</span></div>
+            <div class="audit"><div><h3>Works</h3><p>Its moment-to-moment system is strong: modes, themes, sectors, integrity, energy, pickups, near-miss multipliers, local bests, and touch controls reinforce the same movement skill.</p></div><div><h3>Needs attention</h3><p>The HUD and legend explain a lot at once. The endless structure makes a good run legible, but not a clear finish line for new players.</p></div></div>
+            <p class="next"><strong>Best next step:</strong> add a short onboarding sector and an explicit milestone goal before opening endless play.</p>
+            <a class="play" href="experiments.html#rally">Play Neon Rift Rally <span>→</span></a>
+          </article>
+
+          <article class="game-card rig">
+            <div class="card-heading"><span class="number">07</span><div><p class="section-kicker">Physics construction</p><h2>Sketch Rig Challenge</h2></div></div>
+            <div class="visual rig-visual" aria-label="Drawn vehicle becoming a moving physics rig diagram"><span class="sketch">╲╱<br />╱╲</span><b>→</b><span class="rig-body">▰</span><i class="wheel w1">◉</i><i class="wheel w2">◉</i><em>finish</em></div>
+            <p class="summary">Draw a silhouette or assemble parts, analyse the rig, then test whether its physical form can cross each course.</p>
+            <div class="flow"><span>Draw / place parts</span><b>→</b><span>Analyse</span><b>→</b><span>Run physics</span><b>→</b><span>Iterate design</span></div>
+            <div class="meta"><span>Pointer drawing / drag parts</span><span>Five courses · debug fixtures</span></div>
+            <div class="audit"><div><h3>Works</h3><p>It is the most distinctive experiment: player-created bodies, material-like stats, terrain-specific hints, multiple part types, retry loops, and regression fixtures support genuine design iteration.</p></div><div><h3>Needs attention</h3><p>The interaction model is demanding before the player sees a successful rig. Debug and calibration tools are valuable for development but make the game feel technically heavy.</p></div></div>
+            <p class="next"><strong>Best next step:</strong> start with three playable example rigs and reveal advanced construction and debug controls only after a first run.</p>
+            <a class="play" href="experiments.html#rig">Play Sketch Rig Challenge <span>→</span></a>
+          </article>
+        </section>
+
+        <section class="delivery-note">
+          <p class="section-kicker">Implementation note</p>
+          <h2>One game, three Path Guardians deliveries</h2>
+          <p>Path Guardians TD also exists as standalone desktop and mobile files. They offer alternate entry points, but their duplicated logic should be treated as a maintenance risk until the shared game core is extracted.</p>
+        </section>
+      </main>
+
+      <footer class="site-footer"><span>Experiments Lab · player guide and design audit</span><a href="experiments.html">Play the games →</a></footer>
+    </div>
+  </body>
+</html>
