@@ -139,62 +139,89 @@ function setupSketchRigChallenge(container) {
       </div>
       <ol class="src-steps" aria-label="Play steps"><li><b>1</b> Pick or build</li><li><b>2</b> Analyze</li><li><b>3</b> Run and refine</li></ol>
     </section>
-    <div class="hud">
-      <div class="hud-item"><strong>Level</strong><div id="src-level">1 / ${levels.length}</div></div>
-      <div class="hud-item"><strong>Timer</strong><div id="src-timer">--</div></div>
-      <div class="hud-item"><strong>Parts</strong><div id="src-parts">none</div></div>
-      <div class="hud-item"><strong>Mass</strong><div id="src-mass">0</div></div>
-      <div class="hud-item"><strong>Grip</strong><div id="src-grip">0</div></div>
-      <div class="hud-item"><strong>Stability</strong><div id="src-stability">0</div></div>
-      <div class="hud-item"><strong>Engine</strong><div id="src-engine">0</div></div>
-      <div class="hud-item"><strong>Height</strong><div id="src-height">0px</div></div>
-    </div>
-    <div class="action-row">
-      <button type="button" class="btn ghost" id="src-prev">Prev Level</button>
-      <button type="button" class="btn ghost" id="src-next">Next Level</button>
-      <button type="button" class="btn ghost" id="src-clear">Clear</button>
-      <button type="button" class="btn ghost" id="src-undo">Undo</button>
-      <button type="button" class="btn ghost" id="src-analyze">Analyze</button>
-      <button type="button" class="btn primary" id="src-run">Run</button>
-      <button type="button" class="btn ghost" id="src-retry">Retry</button>
-      <button type="button" class="btn ghost" id="src-debug-toggle">Developer tools</button>
-    </div>
-    <div class="src-debug-panel" id="src-debug-panel" hidden>
-      <label class="src-debug-label" for="src-fixture-select">Fixture</label>
-      <select id="src-fixture-select" class="src-debug-select">
-        ${fixtureCatalog.map((fixture) => `<option value="${fixture.id}">${fixture.label}</option>`).join("")}
-      </select>
-      <button type="button" class="btn ghost" id="src-load-fixture">Load Fixture</button>
-      <button type="button" class="btn ghost" id="src-run-fixture">Load + Run</button>
-      <button type="button" class="btn ghost" id="src-run-regression">Run Regression</button>
-      <button type="button" class="btn ghost" id="src-tune-physics">Tune Physics</button>
-    </div>
-    <div class="src-layout">
-      <section class="src-panel">
-        <p class="src-panel-kicker">1 · Build</p>
-        <h4>Rig Blueprint</h4>
-        <p class="src-help" id="src-help">The oval is your starter chassis. Pick a part, then tap the blueprint to place it. Desktop players can still drag parts.</p>
-        <div class="src-part-palette" id="src-part-palette">
-          <button type="button" class="btn ghost src-part-chip" data-part-type="structure" draggable="true">Structure</button>
-          <button type="button" class="btn ghost src-part-chip" data-part-type="wheel" draggable="true">Wheel</button>
-          <button type="button" class="btn ghost src-part-chip" data-part-type="leg" draggable="true">Leg</button>
-          <button type="button" class="btn ghost src-part-chip" data-part-type="fin" draggable="true">Fin</button>
-          <button type="button" class="btn ghost src-part-chip" data-part-type="tail" draggable="true">Tail</button>
-          <button type="button" class="btn ghost src-part-chip" data-part-type="arm" draggable="true">Arm</button>
+    <section class="src-command-bar" aria-label="Rig controls">
+      <div class="src-level-control">
+        <button type="button" class="btn ghost" id="src-prev" aria-label="Previous test track">Previous</button>
+        <div class="src-level-readout"><span>Test track</span><strong id="src-level-name">Warmup</strong><small id="src-level">1 / ${levels.length}</small></div>
+        <button type="button" class="btn ghost" id="src-next" aria-label="Next test track">Next</button>
+      </div>
+      <div class="src-run-control">
+        <button type="button" class="btn ghost" id="src-analyze">Analyze rig</button>
+        <button type="button" class="btn primary src-run-button" id="src-run" aria-pressed="false">Run test</button>
+        <button type="button" class="btn ghost" id="src-retry">Retry</button>
+      </div>
+      <div class="src-edit-control">
+        <button type="button" class="btn ghost" id="src-undo">Undo</button>
+        <button type="button" class="btn ghost" id="src-clear">Reset design</button>
+      </div>
+      <div class="src-dev-tools">
+        <button type="button" class="btn ghost" id="src-debug-toggle" aria-expanded="false">Developer tools</button>
+        <div class="src-debug-panel" id="src-debug-panel" hidden>
+          <label class="src-debug-label" for="src-fixture-select">Fixture</label>
+          <select id="src-fixture-select" class="src-debug-select">
+            ${fixtureCatalog.map((fixture) => `<option value="${fixture.id}">${fixture.label}</option>`).join("")}
+          </select>
+          <button type="button" class="btn ghost" id="src-load-fixture">Load Fixture</button>
+          <button type="button" class="btn ghost" id="src-run-fixture">Load + Run</button>
+          <button type="button" class="btn ghost" id="src-run-regression">Run Regression</button>
+          <button type="button" class="btn ghost" id="src-tune-physics">Tune Physics</button>
         </div>
-        <canvas id="src-draw" width="${drawWidth}" height="${drawHeight}" class="src-draw"></canvas>
+      </div>
+    </section>
+    <section class="src-course-brief" aria-label="Current course objective">
+      <div><span class="src-course-label">Mission</span><strong id="src-course-objective">Reach the finish flag before time runs out.</strong></div>
+      <ol class="src-course-preview" id="src-course-preview" aria-label="Course obstacles"></ol>
+    </section>
+    <div class="src-layout">
+      <section class="src-panel src-builder-panel" aria-labelledby="src-builder-title">
+        <p class="src-panel-kicker">1 · Build</p>
+        <h4 id="src-builder-title">Rig Blueprint</h4>
+        <p class="src-help" id="src-help">The blue oval is the starter chassis. Choose a part, then tap the blueprint once to place it. Desktop players can also drag parts.</p>
+        <div class="src-part-palette" id="src-part-palette" role="toolbar" aria-label="Rig parts">
+          <button type="button" class="btn ghost src-part-chip src-part-chip--structure" data-part-type="structure" draggable="true" aria-pressed="false"><b>Brace</b><small>stiffens</small></button>
+          <button type="button" class="btn ghost src-part-chip src-part-chip--wheel" data-part-type="wheel" draggable="true" aria-pressed="false"><b>Wheel</b><small>rolls</small></button>
+          <button type="button" class="btn ghost src-part-chip src-part-chip--leg" data-part-type="leg" draggable="true" aria-pressed="false"><b>Leg</b><small>steps</small></button>
+          <button type="button" class="btn ghost src-part-chip src-part-chip--fin" data-part-type="fin" draggable="true" aria-pressed="false"><b>Fin</b><small>balances air</small></button>
+          <button type="button" class="btn ghost src-part-chip src-part-chip--tail" data-part-type="tail" draggable="true" aria-pressed="false"><b>Tail</b><small>steadies</small></button>
+          <button type="button" class="btn ghost src-part-chip src-part-chip--arm" data-part-type="arm" draggable="true" aria-pressed="false"><b>Arm</b><small>grips</small></button>
+        </div>
+        <p class="src-placement-note" id="src-placement-note" aria-live="polite">Choose one part, then tap the blueprint once. Select an item below to edit it without drawing precision.</p>
+        <canvas id="src-draw" width="${drawWidth}" height="${drawHeight}" class="src-draw" tabindex="0" role="img" aria-label="Rig blueprint. The large blue oval is the chassis. Use the part buttons and rig elements list to build and edit it." aria-describedby="src-help src-placement-note"></canvas>
+        <div class="src-canvas-legend" aria-label="Blueprint legend"><span class="src-legend-chassis">Chassis</span><span class="src-legend-wheel">Wheel</span><span class="src-legend-leg">Leg</span><span class="src-legend-stability">Stabilizer</span><span class="src-legend-com">Centre of mass</span></div>
         <p class="src-hint" id="src-level-hint"></p>
+        <section class="src-inspect-panel" aria-labelledby="src-inspect-title">
+          <div class="src-inspect-heading"><div><p class="src-panel-kicker">2 · Inspect</p><h4 id="src-inspect-title">Rig intelligence</h4></div><span class="src-readiness-badge" id="src-readiness-badge">Draft</span></div>
+          <p class="src-readiness-copy" id="src-readiness" aria-live="polite">Add two wheels or legs to give the chassis a stable support base.</p>
+          <div class="src-analysis-summary" id="src-analysis-summary"></div>
+          <div class="src-selection-inspector" id="src-selection-inspector"></div>
+          <div class="src-element-actions"><button type="button" class="btn ghost" id="src-delete-selected" disabled>Remove selected</button><button type="button" class="btn ghost" id="src-duplicate-selected" disabled>Duplicate</button></div>
+          <ol class="src-elements-list" id="src-elements-list" aria-label="Rig elements"></ol>
+          <details class="src-metrics-details"><summary>Engineering metrics</summary><div class="hud src-engineering-hud">
+            <div class="hud-item"><strong>Time</strong><div id="src-timer">--</div></div>
+            <div class="hud-item"><strong>Parts</strong><div id="src-parts">none</div></div>
+            <div class="hud-item"><strong>Build load</strong><div id="src-mass">0</div></div>
+            <div class="hud-item"><strong>Grip</strong><div id="src-grip">0</div></div>
+            <div class="hud-item"><strong>Balance</strong><div id="src-stability">0</div></div>
+            <div class="hud-item"><strong>Drive</strong><div id="src-engine">0</div></div>
+            <div class="hud-item"><strong>Height</strong><div id="src-height">0px</div></div>
+          </div></details>
+        </section>
       </section>
-      <section class="src-world-wrap">
-        <div class="src-track-heading"><div><p class="src-panel-kicker">2 · Test</p><h4>Test Track</h4></div><span id="src-track-goal">Reach the finish</span></div>
-        <canvas id="src-world" width="${worldWidth}" height="${worldHeight}" class="src-world"></canvas>
+      <section class="src-world-wrap" aria-labelledby="src-track-title">
+        <div class="src-track-heading"><div><p class="src-panel-kicker">3 · Test</p><h4 id="src-track-title">Test Track</h4></div><span id="src-track-goal">Reach the finish</span></div>
+        <canvas id="src-world" width="${worldWidth}" height="${worldHeight}" class="src-world" role="img" aria-label="Animated test track showing the rig, terrain, and finish flag."></canvas>
+        <section class="src-run-result" id="src-run-result" hidden aria-live="assertive" aria-labelledby="src-run-result-title">
+          <span class="src-result-kicker" id="src-result-kicker">Test result</span><h4 id="src-run-result-title">Ready to test</h4><p id="src-run-result-copy"></p>
+          <div><button type="button" class="btn primary" id="src-result-retry">Try again</button><button type="button" class="btn ghost" id="src-result-next">Next track</button></div>
+        </section>
       </section>
     </div>
-    <p class="status" id="src-status">Draw, analyze, run, iterate.</p>
+    <p class="status src-status-card" id="src-status" role="status" aria-live="polite" aria-atomic="true">Draw, analyze, run, iterate.</p>
   `;
   container.appendChild(root);
 
   const levelEl = root.querySelector("#src-level");
+  const levelNameEl = root.querySelector("#src-level-name");
   const timerEl = root.querySelector("#src-timer");
   const partsEl = root.querySelector("#src-parts");
   const massEl = root.querySelector("#src-mass");
@@ -204,10 +231,26 @@ function setupSketchRigChallenge(container) {
   const heightEl = root.querySelector("#src-height");
   const hintEl = root.querySelector("#src-level-hint");
   const helpEl = root.querySelector("#src-help");
+  const placementNoteEl = root.querySelector("#src-placement-note");
   const trackGoalEl = root.querySelector("#src-track-goal");
+  const courseObjectiveEl = root.querySelector("#src-course-objective");
+  const coursePreviewEl = root.querySelector("#src-course-preview");
   const missionKickerEl = root.querySelector("#src-mission-kicker");
   const statusEl = root.querySelector("#src-status");
+  const readinessEl = root.querySelector("#src-readiness");
+  const readinessBadgeEl = root.querySelector("#src-readiness-badge");
+  const analysisSummaryEl = root.querySelector("#src-analysis-summary");
+  const selectionInspectorEl = root.querySelector("#src-selection-inspector");
+  const elementsListEl = root.querySelector("#src-elements-list");
+  const deleteSelectedEl = root.querySelector("#src-delete-selected");
+  const duplicateSelectedEl = root.querySelector("#src-duplicate-selected");
+  const runButtonEl = root.querySelector("#src-run");
+  const runResultEl = root.querySelector("#src-run-result");
+  const resultKickerEl = root.querySelector("#src-result-kicker");
+  const resultTitleEl = root.querySelector("#src-run-result-title");
+  const resultCopyEl = root.querySelector("#src-run-result-copy");
   const debugPanelEl = root.querySelector("#src-debug-panel");
+  const debugToggleEl = root.querySelector("#src-debug-toggle");
   const fixtureSelectEl = root.querySelector("#src-fixture-select");
   const partPaletteEl = root.querySelector("#src-part-palette");
   const drawCanvas = root.querySelector("#src-draw");
@@ -247,6 +290,7 @@ function setupSketchRigChallenge(container) {
   let cameraX = 0;
   let phase = 0;
   let lastTs = performance.now();
+  let frameAccumulator = 0;
   let rafId = null;
   let messageFlash = 0;
   let stuckTimer = 0;
@@ -256,6 +300,8 @@ function setupSketchRigChallenge(container) {
   let inSelfTest = false;
   let debugOpen = false;
   let selectedPartType = null;
+  let selectedElement = null;
+  const completedLevels = new Set();
   let draggingPartIndex = -1;
   let resizingPartIndex = -1;
   let dragPartOffset = { x: 0, y: 0 };
@@ -266,6 +312,38 @@ function setupSketchRigChallenge(container) {
 
   function clamp(v, min, max) { return Math.max(min, Math.min(max, v)); }
   function currentLevel() { return levels[levelIndex]; }
+  function partDisplayName(type) {
+    return type === "loop" || type === "wheel" ? "Wheel"
+      : type === "leg" ? "Leg"
+      : type === "structure" ? "Brace"
+      : type === "fin" ? "Fin"
+      : type === "tail" ? "Tail"
+      : type === "arm" ? "Arm"
+      : "Connector";
+  }
+  function partPurpose(type) {
+    return type === "loop" || type === "wheel" ? "rolls and adds ground traction"
+      : type === "leg" ? "steps and supports the chassis"
+      : type === "structure" ? "stiffens the chassis"
+      : type === "fin" ? "balances the rig in the air"
+      : type === "tail" ? "steadies the rig"
+      : type === "arm" ? "can grip while climbing"
+      : "links shapes to the chassis";
+  }
+  function challengeName(challenge) {
+    return challenge.type === "step" ? "Step"
+      : challenge.type === "gap" ? "Gap"
+      : challenge.type === "ceiling" ? "Low tunnel"
+      : challenge.type === "rough" ? "Rough ground"
+      : challenge.label || "Obstacle";
+  }
+  function challengeAdvice(challenge) {
+    return challenge.type === "step" ? "A compact rig with two supports climbs more reliably."
+      : challenge.type === "gap" ? "A stable, quick rig carries momentum across the gap."
+      : challenge.type === "ceiling" ? `Keep the rig below ${challenge.clearance}px to fit the tunnel.`
+      : challenge.type === "rough" ? "A wider support base keeps traction over rough ground."
+      : "Build for the upcoming obstacle.";
+  }
   function setStatus(msg, pulse) {
     if (inSelfTest) return;
     statusEl.textContent = msg;
@@ -274,25 +352,47 @@ function setupSketchRigChallenge(container) {
   function syncDebugPanel() {
     if (!debugPanelEl) return;
     debugPanelEl.hidden = !debugOpen;
+    if (debugToggleEl) debugToggleEl.setAttribute("aria-expanded", String(debugOpen));
   }
   function syncPartSelection() {
     partPaletteEl.querySelectorAll(".src-part-chip").forEach(function (chip) {
       chip.classList.toggle("is-selected", chip.dataset.partType === selectedPartType);
+      chip.setAttribute("aria-pressed", String(chip.dataset.partType === selectedPartType));
     });
     if (selectedPartType) {
-      helpEl.textContent = `${selectedPartType} selected — tap the blueprint to place one, then drag it to refine its position.`;
+      helpEl.textContent = `${partDisplayName(selectedPartType)} selected. Tap the blueprint once to place it, then use the elements list to refine it.`;
+      if (placementNoteEl) placementNoteEl.textContent = `${partDisplayName(selectedPartType)} is armed for one placement. Press Escape or select it again to cancel.`;
     } else {
-      helpEl.textContent = "The oval is your starter chassis. Pick a part, then tap the blueprint to place it. Desktop players can still drag parts.";
+      helpEl.textContent = "The blue oval is your starter chassis. Choose a part, then tap the blueprint once to place it. Desktop players can also drag parts.";
+      if (placementNoteEl) placementNoteEl.textContent = "Choose one part, then tap the blueprint once. Select an item below to edit it without drawing precision.";
     }
   }
   function selectPartType(type) {
     selectedPartType = selectedPartType === type ? null : type;
+    if (selectedPartType) selectedElement = null;
     syncPartSelection();
-    if (selectedPartType) setStatus(`${selectedPartType} selected. Tap the blueprint to place it.`, true);
+    syncElementInspector();
+    if (selectedPartType) setStatus(`${partDisplayName(selectedPartType)} selected. Tap the blueprint to place one.`, true);
   }
   function syncTrackGoal() {
     if (trackGoalEl) trackGoalEl.textContent = `${currentLevel().name} · ${currentLevel().timeLimit}s`;
     if (missionKickerEl) missionKickerEl.textContent = `Build for · ${currentLevel().name}`;
+    if (levelNameEl) levelNameEl.textContent = `${currentLevel().name}${completedLevels.has(levelIndex) ? " · cleared" : ""}`;
+    if (courseObjectiveEl) courseObjectiveEl.textContent = `Reach the finish in ${currentLevel().timeLimit}s. ${currentLevel().hint}`;
+    if (coursePreviewEl) {
+      coursePreviewEl.textContent = "";
+      currentLevel().challenges.forEach(function (challenge) {
+        const item = document.createElement("li");
+        item.className = challenge.done ? "is-cleared" : "";
+        item.textContent = challengeName(challenge);
+        item.title = challengeAdvice(challenge);
+        coursePreviewEl.appendChild(item);
+      });
+    }
+    const prevButton = root.querySelector("#src-prev");
+    const nextButton = root.querySelector("#src-next");
+    if (prevButton) prevButton.disabled = levelIndex <= 0;
+    if (nextButton) nextButton.disabled = levelIndex >= levels.length - 1;
   }
   function defaultPhysicsTuning() {
     return {
@@ -387,14 +487,25 @@ function setupSketchRigChallenge(container) {
     const previewScale = rig ? Math.min(122 / rig.bounds.w, 88 / rig.bounds.h) : 1;
     drawCtx.lineCap = "round";
     drawCtx.lineJoin = "round";
-    drawCtx.strokeStyle = "#0f172a";
     drawCtx.lineWidth = 5;
-    for (const stroke of strokes) {
+    const bodyStrokeIndex = rig ? rig.bodyStrokeIndex : 0;
+    for (let strokeIndex = 0; strokeIndex < strokes.length; strokeIndex += 1) {
+      const stroke = strokes[strokeIndex];
       if (!stroke.length) continue;
+      const selectedStroke = !!selectedElement && selectedElement.kind === "stroke" && selectedElement.index === strokeIndex;
+      const isBody = strokeIndex === bodyStrokeIndex;
+      drawCtx.strokeStyle = selectedStroke ? "#7c3aed" : isBody ? "#0284c7" : "#0f172a";
+      drawCtx.lineWidth = selectedStroke ? 7 : isBody ? 4.4 : 5;
       drawCtx.beginPath();
       drawCtx.moveTo(stroke[0].x, stroke[0].y);
       for (let i = 1; i < stroke.length; i += 1) drawCtx.lineTo(stroke[i].x, stroke[i].y);
       drawCtx.stroke();
+      if (isBody) {
+        const bodyBounds = strokeBounds(stroke);
+        drawCtx.fillStyle = "rgba(2,132,199,0.92)";
+        drawCtx.font = "700 10px Space Grotesk, sans-serif";
+        drawCtx.fillText("CHASSIS", bodyBounds.minX + 4, bodyBounds.minY - 8);
+      }
     }
     for (let i = 0; i < placedParts.length; i += 1) {
       const part = placedParts[i];
@@ -458,6 +569,17 @@ function setupSketchRigChallenge(container) {
       drawCtx.beginPath();
       drawCtx.arc(part.x + size + 6, part.y - size - 6, 3.2, 0, Math.PI * 2);
       drawCtx.fill();
+      if (selectedElement && selectedElement.kind === "part" && selectedElement.index === i) {
+        drawCtx.strokeStyle = "#7c3aed";
+        drawCtx.lineWidth = 2.4;
+        if (drawCtx.setLineDash) drawCtx.setLineDash([4, 3]);
+        drawCtx.beginPath();
+        drawCtx.arc(part.x, part.y, size + 13, 0, Math.PI * 2);
+        drawCtx.stroke();
+        if (drawCtx.setLineDash) drawCtx.setLineDash([]);
+        drawCtx.fillStyle = "#7c3aed";
+        drawCtx.fillRect(part.x + size + 8, part.y - size - 12, 8, 8);
+      }
     }
     if (!rig) return;
     if (rig.bodyOval) {
@@ -478,23 +600,40 @@ function setupSketchRigChallenge(container) {
     drawCtx.strokeStyle = "rgba(14,165,233,0.88)";
     drawCtx.lineWidth = 2;
     drawCtx.strokeRect(rig.bounds.minX, rig.bounds.minY, rig.bounds.w, rig.bounds.h);
-    for (const part of rig.attachments || []) {
+    for (const part of rig.detectedAttachments || rig.attachments || []) {
       if (!part.preview || !part.preview.anchorDraw) continue;
       const ax = rig.centerX + part.preview.anchorDraw.x / previewScale;
       const ay = rig.centerY + part.preview.anchorDraw.y / previewScale;
+      const isInactive = part.classification && part.classification.connected === false;
+      const isSelected = !!selectedElement && selectedElement.kind === "stroke" && selectedElement.index === part.sourceStrokeIndex;
       drawCtx.fillStyle =
         part.type === "leg"
           ? "rgba(74,222,128,0.95)"
           : part.type === "loop"
           ? "rgba(251,191,36,0.95)"
+          : part.type === "structure"
+          ? "rgba(100,116,139,0.95)"
+          : part.type === "fin"
+          ? "rgba(96,165,250,0.95)"
           : part.type === "arm"
           ? "rgba(244,114,182,0.95)"
           : "rgba(167,139,250,0.95)";
+      if (isInactive) drawCtx.globalAlpha = 0.44;
       drawCtx.beginPath();
-      drawCtx.arc(ax, ay, 4, 0, Math.PI * 2);
+      drawCtx.arc(ax, ay, isSelected ? 6 : 4, 0, Math.PI * 2);
       drawCtx.fill();
+      drawCtx.globalAlpha = 1;
       drawCtx.font = "600 10px Space Grotesk, sans-serif";
-      drawCtx.fillText(part.preview.label, ax + 6, ay - 4);
+      drawCtx.fillStyle = isInactive ? "rgba(71,85,105,0.92)" : "rgba(15,23,42,0.88)";
+      const confidence = part.classification && part.classification.source === "freehand" ? ` ${Math.round(part.classification.confidence * 100)}%` : "";
+      drawCtx.fillText(`${partDisplayName(part.type)}${confidence}${isInactive ? " · connect" : ""}`, ax + 7, ay - 5);
+      if (isSelected) {
+        drawCtx.strokeStyle = "#7c3aed";
+        drawCtx.lineWidth = 2;
+        drawCtx.beginPath();
+        drawCtx.arc(ax, ay, 9, 0, Math.PI * 2);
+        drawCtx.stroke();
+      }
     }
     if (rig.comLocal) {
       const comX = rig.centerX + (rig.bodyOval.center.x + rig.comLocal.x) / previewScale;
@@ -519,18 +658,32 @@ function setupSketchRigChallenge(container) {
 
   function sampleStroke(stroke, gap) {
     if (!stroke || stroke.length < 2) return stroke ? stroke.slice() : [];
-    const out = [stroke[0]];
-    let carry = 0;
+    const spacing = Math.max(1, gap || 5);
+    const out = [{ x: stroke[0].x, y: stroke[0].y }];
+    let sinceLastSample = 0;
+    let start = { x: stroke[0].x, y: stroke[0].y };
     for (let i = 1; i < stroke.length; i += 1) {
-      const a = stroke[i - 1];
-      const b = stroke[i];
-      const seg = Math.hypot(b.x - a.x, b.y - a.y);
-      if (seg < 0.001) continue;
-      let d = gap - carry;
-      while (d <= seg) { const t = d / seg; out.push({ x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t }); d += gap; }
-      carry = Math.max(0, d - seg);
+      const end = stroke[i];
+      let dx = end.x - start.x;
+      let dy = end.y - start.y;
+      let remaining = Math.hypot(dx, dy);
+      while (remaining > 1e-6 && sinceLastSample + remaining >= spacing) {
+        const needed = spacing - sinceLastSample;
+        const t = needed / remaining;
+        start = { x: start.x + dx * t, y: start.y + dy * t };
+        out.push(start);
+        dx = end.x - start.x;
+        dy = end.y - start.y;
+        remaining = Math.hypot(dx, dy);
+        sinceLastSample = 0;
+      }
+      sinceLastSample += remaining;
+      start = { x: end.x, y: end.y };
     }
-    out.push(stroke[stroke.length - 1]);
+    const last = stroke[stroke.length - 1];
+    if (Math.hypot(out[out.length - 1].x - last.x, out[out.length - 1].y - last.y) > 0.25) {
+      out.push({ x: last.x, y: last.y });
+    }
     return out;
   }
 
@@ -736,6 +889,13 @@ function setupSketchRigChallenge(container) {
     const downwardReach = lowestY - (oval.center.y + oval.ry);
     const upwardReach = (oval.center.y - oval.ry) - highestY;
     const lateralReach = farthestX - oval.rx;
+    const bodyScale = Math.max(1, Math.sqrt(Math.max(1, oval.rx * oval.ry)));
+    let connectionDistance = Infinity;
+    for (const p of stroke) {
+      const dx = (p.x - oval.center.x) / Math.max(1, oval.rx);
+      const dy = (p.y - oval.center.y) / Math.max(1, oval.ry);
+      connectionDistance = Math.min(connectionDistance, Math.abs(Math.hypot(dx, dy) - 1) * bodyScale);
+    }
     return {
       bounds: b,
       closeDist,
@@ -747,6 +907,16 @@ function setupSketchRigChallenge(container) {
       downwardReach,
       upwardReach,
       lateralReach,
+      bodyScale,
+      relativeWidth: b.w / bodyScale,
+      relativeHeight: b.h / bodyScale,
+      relativeLength: strokeLen / bodyScale,
+      closureRatio: closeDist / Math.max(1, strokeLen),
+      downwardReachRatio: downwardReach / bodyScale,
+      upwardReachRatio: upwardReach / bodyScale,
+      lateralReachRatio: lateralReach / bodyScale,
+      connectionDistance,
+      connected: connectionDistance <= Math.max(8, bodyScale * 0.34),
     };
   }
 
@@ -777,32 +947,59 @@ function setupSketchRigChallenge(container) {
     const prototypes = getAttachmentPrototypes();
     let best = null;
     let bestScore = Infinity;
+    let secondScore = Infinity;
     for (const proto of prototypes) {
       const score =
-        Math.abs(features.aspect - proto.features.aspect) * 1.8 +
-        Math.abs(features.closeDist - proto.features.closeDist) * 0.08 +
-        Math.abs(features.strokeLen - proto.features.strokeLen) * 0.02 +
+        Math.abs(features.aspect - proto.features.aspect) * 0.55 +
+        Math.abs(features.closureRatio - proto.features.closureRatio) * 1.7 +
+        Math.abs(features.relativeLength - proto.features.relativeLength) * 0.3 +
+        Math.abs(features.relativeWidth - proto.features.relativeWidth) * 0.35 +
+        Math.abs(features.relativeHeight - proto.features.relativeHeight) * 0.35 +
         Math.abs(features.bend - proto.features.bend) * 0.7 +
-        Math.abs(features.downwardReach - proto.features.downwardReach) * 0.16 +
-        Math.abs(features.upwardReach - proto.features.upwardReach) * 0.16 +
-        Math.abs(features.lateralReach - proto.features.lateralReach) * 0.12;
+        Math.abs(features.downwardReachRatio - proto.features.downwardReachRatio) * 0.75 +
+        Math.abs(features.upwardReachRatio - proto.features.upwardReachRatio) * 0.75 +
+        Math.abs(features.lateralReachRatio - proto.features.lateralReachRatio) * 0.55;
       if (score < bestScore) {
+        secondScore = bestScore;
         bestScore = score;
         best = proto.type;
+      } else if (score < secondScore) {
+        secondScore = score;
       }
     }
-    return { type: best || "arm", score: bestScore };
+    const margin = Number.isFinite(secondScore) ? secondScore - bestScore : 0.8;
+    const confidence = clamp((1 - bestScore / 2.8) * 0.72 + clamp(margin / 0.7, 0, 1) * 0.28, 0.1, 0.98);
+    return { type: best || "structure", score: bestScore, secondScore, confidence };
   }
 
   function classifyAttachment(stroke, oval, si) {
     const features = extractAttachmentFeatures(stroke, oval);
     const b = features.bounds;
     const prototypeMatch = matchAttachmentPrototype(features);
-    const isLoop = prototypeMatch.type === "loop" || (features.closeDist < 9 && features.aspect < 1.8 && features.strokeLen > (b.w + b.h) * 1.45);
-    const isLeg = prototypeMatch.type === "leg" || (b.h > b.w * 1.3 && features.downwardReach > 6);
-    const isWing = prototypeMatch.type === "fin" || (b.w > b.h * 1.7 && features.upwardReach > -4);
-    const isArm = prototypeMatch.type === "arm" || (!isLoop && !isLeg && features.upwardReach > 6 && features.bend > 0.8);
-    const isTail = prototypeMatch.type === "tail" || (features.lateralReach > 10 && features.bend < 2.8 && !isLoop && !isLeg && !isArm);
+    const prototypeTrusted = prototypeMatch.confidence >= 0.52;
+    const isLoop =
+      (features.closureRatio < 0.18 && features.aspect < 1.8 && features.relativeWidth > 0.24 && features.relativeHeight > 0.24)
+      || (prototypeMatch.type === "loop" && prototypeTrusted && features.closureRatio < 0.32);
+    const isLeg = !isLoop && (
+      (features.relativeHeight > features.relativeWidth * 1.3 && features.downwardReachRatio > 0.16)
+      || (prototypeMatch.type === "leg" && prototypeTrusted && features.downwardReachRatio > 0.05)
+    );
+    const isStructure = !isLoop && !isLeg && (
+      (features.relativeWidth > features.relativeHeight * 2.8 && Math.max(Math.abs(features.downwardReachRatio), Math.abs(features.upwardReachRatio)) < 0.42)
+      || (prototypeMatch.type === "structure" && prototypeTrusted)
+    );
+    const isArm = !isLoop && !isLeg && !isStructure && (
+      (prototypeMatch.type === "arm" && prototypeTrusted)
+      || (features.upwardReachRatio > 0.14 && features.bend > 0.75 && features.relativeWidth > 0.5)
+    );
+    const isWing = !isLoop && !isLeg && !isStructure && !isArm && (
+      (prototypeMatch.type === "fin" && prototypeTrusted)
+      || (features.relativeWidth > features.relativeHeight * 1.7 && features.upwardReachRatio > -0.08)
+    );
+    const isTail = !isLoop && !isLeg && !isStructure && !isArm && !isWing && (
+      (prototypeMatch.type === "tail" && prototypeTrusted)
+      || (features.lateralReachRatio > 0.28 && features.bend < 2.8)
+    );
     const anchorHint = stroke.reduce(function (best, p) {
       const d = Math.hypot(p.x - oval.center.x, p.y - oval.center.y);
       return d < best.d ? { d, p } : best;
@@ -819,7 +1016,13 @@ function setupSketchRigChallenge(container) {
       if (isArm) return p.y <= minRelY + Math.max(4, b.h * 0.18);
       return p.y >= maxRelY - Math.max(5, b.h * 0.14);
     });
-    const type = isLeg ? "leg" : isLoop ? "loop" : isWing ? "fin" : isTail ? "tail" : "arm";
+    const type = isLoop ? "loop" : isLeg ? "leg" : isStructure ? "structure" : isArm ? "arm" : isWing ? "fin" : isTail ? "tail" : "structure";
+    const reason = type === "loop" ? "closed, round stroke"
+      : type === "leg" ? "vertical stroke reaches below the chassis"
+      : type === "structure" ? "straight structural connection"
+      : type === "arm" ? "bent, upward-reaching connector"
+      : type === "fin" ? "wide, upward-facing surface"
+      : "long lateral stabilizer";
     const amp = type === "leg" ? 0.78 : type === "loop" ? 0.2 : type === "fin" ? 0.3 : type === "tail" ? 0.24 : 0.38;
     const freq = type === "leg" ? 3.1 : type === "loop" ? 6 : type === "fin" ? 2.3 : type === "tail" ? 2.6 : 2.2;
     const drive = type === "leg" ? 1.02 : type === "loop" ? 0.82 : type === "fin" ? 0.44 : type === "tail" ? 0.34 : 0.66;
@@ -851,13 +1054,27 @@ function setupSketchRigChallenge(container) {
         downwardReach: features.downwardReach,
         upwardReach: features.upwardReach,
         lateralReach: features.lateralReach,
+        closureRatio: features.closureRatio,
+        relativeWidth: features.relativeWidth,
+        relativeHeight: features.relativeHeight,
+        relativeLength: features.relativeLength,
+        connectionDistance: features.connectionDistance,
         isLoop,
         isLeg,
+        isStructure,
         isWing,
         isArm,
         isTail,
         prototypeType: prototypeMatch.type,
         prototypeScore: prototypeMatch.score,
+        prototypeConfidence: prototypeMatch.confidence,
+      },
+      classification: {
+        type,
+        confidence: clamp(prototypeMatch.confidence + (features.connected ? 0.08 : -0.16), 0.08, 0.99),
+        connected: features.connected,
+        source: "freehand",
+        reason,
       },
       preview: {
         label: type === "loop" ? "wheel" : type,
@@ -972,13 +1189,40 @@ function setupSketchRigChallenge(container) {
       label: part.type,
       anchorDraw: anchorInfo,
     };
+    classified.classification = {
+      type,
+      confidence: 1,
+      connected: true,
+      source: "placed",
+      reason: `placed ${partDisplayName(part.type).toLowerCase()}`,
+    };
     return classified;
   }
 
+  function chooseBodyStroke(localEntries) {
+    let best = null;
+    for (let i = 0; i < localEntries.length; i += 1) {
+      const entry = localEntries[i];
+      const stroke = entry.stroke;
+      if (!stroke || stroke.length < 6) continue;
+      const bounds = strokeBounds(stroke);
+      let perimeter = 0;
+      for (let pi = 1; pi < stroke.length; pi += 1) perimeter += Math.hypot(stroke[pi].x - stroke[pi - 1].x, stroke[pi].y - stroke[pi - 1].y);
+      const closure = Math.hypot(stroke[0].x - stroke[stroke.length - 1].x, stroke[0].y - stroke[stroke.length - 1].y) / Math.max(1, perimeter);
+      const area = bounds.w * bounds.h;
+      const ovalLike = closure < 0.2 && bounds.w > 18 && bounds.h > 14;
+      // A first body remains a gentle tie-breaker, but a clear larger closed shape wins.
+      const score = area * (ovalLike ? 1.8 : 0.55) + perimeter * (ovalLike ? 0.45 : 0.08) + (entry.sourceIndex === 0 ? 26 : 0);
+      if (!best || score > best.score) best = { ...entry, score };
+    }
+    return best || localEntries[0] || null;
+  }
+
   function analyzeDrawing() {
-    const sampled = strokes
-      .map((s) => smoothStroke(sampleStroke(s, 5), 1))
-      .filter((s) => s.length >= 2);
+    const sampledEntries = strokes
+      .map((stroke, sourceIndex) => ({ stroke: smoothStroke(sampleStroke(stroke, 5), 1), sourceIndex }))
+      .filter((entry) => entry.stroke.length >= 2);
+    const sampled = sampledEntries.map((entry) => entry.stroke);
     const pts = flatten(sampled);
     if (pts.length < 18) { rig = null; syncHud(); setStatus("Draw a larger shape first.", true); return null; }
     let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
@@ -987,8 +1231,13 @@ function setupSketchRigChallenge(container) {
     const cx = (minX + maxX) * 0.5;
     const cy = (minY + maxY) * 0.5;
     const scale = Math.min(122 / bounds.w, 88 / bounds.h);
-    const localStrokes = sampled.map((s) => s.map((p) => ({ x: (p.x - cx) * scale, y: (p.y - cy) * scale })));
-    const mainBodyStroke = localStrokes[0] || [];
+    const localEntries = sampledEntries.map((entry) => ({
+      sourceIndex: entry.sourceIndex,
+      stroke: entry.stroke.map((p) => ({ x: (p.x - cx) * scale, y: (p.y - cy) * scale })),
+    }));
+    const bodyEntry = chooseBodyStroke(localEntries);
+    const localStrokes = localEntries.map((entry) => entry.stroke);
+    const mainBodyStroke = bodyEntry ? bodyEntry.stroke : [];
     if (mainBodyStroke.length < 6) {
       rig = null;
       syncHud();
@@ -1000,15 +1249,29 @@ function setupSketchRigChallenge(container) {
     const bodySamplePoints = bodyPoints;
     const attachments = [];
     for (let pi = 0; pi < placedParts.length; pi += 1) {
-      attachments.push(buildAttachmentFromPlacedPart(placedParts[pi], cx, cy, scale, bodyOval, pi + 1));
+      const attachment = buildAttachmentFromPlacedPart(placedParts[pi], cx, cy, scale, bodyOval, pi + 1);
+      attachment.sourcePartIndex = pi;
+      attachments.push(attachment);
     }
-    for (let si = 1; si < localStrokes.length; si += 1) {
-      const stroke = localStrokes[si];
+    for (let si = 0; si < localEntries.length; si += 1) {
+      const entry = localEntries[si];
+      if (!bodyEntry || entry.sourceIndex === bodyEntry.sourceIndex) continue;
+      const stroke = entry.stroke;
       if (!stroke.length) continue;
-      attachments.push(classifyAttachment(stroke, bodyOval, placedParts.length + si));
+      const attachment = classifyAttachment(stroke, bodyOval, placedParts.length + si);
+      attachment.sourceStrokeIndex = entry.sourceIndex;
+      attachments.push(attachment);
     }
 
-    const metricStrokes = [bodyPoints].concat(localStrokes.slice(1));
+    const activeAttachments = attachments.filter(function (attachment) {
+      return !attachment.classification || attachment.classification.connected !== false;
+    });
+    const activeStrokeIndexes = new Set(activeAttachments
+      .filter(function (attachment) { return typeof attachment.sourceStrokeIndex === "number"; })
+      .map(function (attachment) { return attachment.sourceStrokeIndex; }));
+    const metricStrokes = [bodyPoints].concat(localEntries
+      .filter((entry) => (!bodyEntry || entry.sourceIndex !== bodyEntry.sourceIndex) && activeStrokeIndexes.has(entry.sourceIndex))
+      .map((entry) => entry.stroke));
     const localPoints = flatten(metricStrokes);
     let lMinX = Infinity, lMinY = Infinity, lMaxX = -Infinity, lMaxY = -Infinity, perimeter = 0, sumAbsX = 0, sumX = 0;
     for (const stroke of metricStrokes) {
@@ -1030,7 +1293,7 @@ function setupSketchRigChallenge(container) {
     rough = clamp((rough / Math.max(1, bottom.length - 1)) * 0.22, 0, 18);
     const symmetry = clamp(1 - Math.abs(sumX / Math.max(1, sumAbsX * 0.7)), 0.1, 1.2);
     const partStats = { loops: 0, supports: 0, spikes: 0, complex: 0 };
-    for (const part of attachments) {
+    for (const part of activeAttachments) {
       if (part.type === "loop") partStats.loops += 1;
       else if (part.type === "leg") partStats.supports += 1;
       else if (part.type === "tail") partStats.spikes += 1;
@@ -1041,7 +1304,12 @@ function setupSketchRigChallenge(container) {
     const grip = clamp(38 + span * 0.68 + rough * 3.2 - h * 0.12, 20, 170);
     const stability = clamp(92 + symmetry * 34 - compactness * 9 + partStats.supports * 4 - partStats.spikes * 2, 24, 168);
     const enginePotential = clamp(62 + compactness * 22 + (span / Math.max(1, w)) * 36 + symmetry * 14 - mass * 0.2 + partStats.loops * 5 + partStats.spikes * 2, 24, 220);
-    const massModel = buildRigMassModel(bodyOval, attachments);
+    const massModel = buildRigMassModel(bodyOval, activeAttachments);
+    const readableParts = [];
+    if (partStats.loops) readableParts.push(`${partStats.loops} ${partStats.loops === 1 ? "wheel" : "wheels"}`);
+    if (partStats.supports) readableParts.push(`${partStats.supports} ${partStats.supports === 1 ? "leg" : "legs"}`);
+    const stabilizers = activeAttachments.filter((part) => part.type === "fin" || part.type === "tail" || part.type === "arm" || part.type === "structure").length;
+    if (stabilizers) readableParts.push(`${stabilizers} ${stabilizers === 1 ? "stabilizer" : "stabilizers"}`);
 
     rig = {
       bounds,
@@ -1050,12 +1318,15 @@ function setupSketchRigChallenge(container) {
       localStrokes,
       inputBodyStroke: mainBodyStroke,
       bodyStroke: bodyPoints,
+      bodyStrokeIndex: bodyEntry ? bodyEntry.sourceIndex : 0,
       bodyOval,
       bodySamplePoints,
-      attachments,
+      attachments: activeAttachments,
+      detectedAttachments: attachments,
       width: w,
       height: h,
       mass,
+      physicalMass: massModel.totalMass,
       massCenter: massModel.center,
       massPoints: massModel.points,
       inertia: massModel.inertia,
@@ -1067,16 +1338,18 @@ function setupSketchRigChallenge(container) {
       centroidX: sumX / localPoints.length,
       centroidY: localPoints.reduce(function (acc, p) { return acc + p.y; }, 0) / Math.max(1, localPoints.length),
       partStats,
-      partText: `B1 A${attachments.length} L${partStats.loops} S${partStats.supports}`,
+      partText: readableParts.length ? `Body + ${readableParts.join(", ")}` : "Body only",
     };
     rig.comLocal = {
       x: massModel.center.x - bodyOval.center.x,
       y: massModel.center.y - bodyOval.center.y,
     };
     rig.physicsProfile = inferPhysicsProfile(rig);
+    rig.readiness = assessRigReadiness(rig);
     baseLocked = true;
     syncHud();
-    setStatus(`Rig analyzed. Oval body locked. Parts ${rig.partText}. Mass ${Math.round(mass)}, grip ${Math.round(grip)}, stability ${Math.round(stability)}.`, true);
+    syncElementInspector();
+    setStatus(`Rig analyzed: ${rig.partText}. ${rig.readiness.advice}`, true);
     renderDrawing();
     return rig;
   }
@@ -1163,6 +1436,7 @@ function setupSketchRigChallenge(container) {
     const finCount = r.attachments.filter((a) => a.type === "fin").length;
     const tailCount = r.attachments.filter((a) => a.type === "tail").length;
     const armCount = r.attachments.filter((a) => a.type === "arm").length;
+    const supportLayout = measureSupportLayout(r);
     const supportBias = clamp((legCount * 1.25 + loopCount * 0.9 + finCount * 0.45) / Math.max(1, r.attachments.length), 0.35, 1.6);
     const stanceWidth = clamp(r.width * (0.34 + supportBias * 0.18), 24, 130);
     const cadence = clamp(1.5 + supportBias * 1.15 + r.compactness * 0.22, 1.6, 4.5);
@@ -1182,6 +1456,7 @@ function setupSketchRigChallenge(container) {
       airControl: clamp(0.16 + finCount * 0.12 + tailCount * 0.08, 0.12, 0.6),
       rollBias: clamp(0.2 + loopCount * 0.16, 0.2, 0.9),
       grabStrength: clamp(0.28 + armCount * 0.22, 0.22, 0.92),
+      supportLayout,
       locomotionMode:
         loopCount >= 3 ? "trike"
         : loopCount >= 2 && legCount === 0 ? "cart"
@@ -1191,6 +1466,236 @@ function setupSketchRigChallenge(container) {
         : finCount >= 2 && loopCount === 0 && legCount === 0 ? "glider"
         : "hybrid",
     };
+  }
+
+  function measureSupportLayout(nextRig) {
+    const supports = (nextRig.attachments || []).filter(function (attachment) {
+      return attachment.type === "loop" || attachment.type === "leg";
+    }).map(function (attachment) {
+      if (attachment.type === "loop") return attachmentCenterLocal(attachment);
+      const foot = attachment.relPoints && attachment.relPoints.length ? attachment.relPoints[attachment.relPoints.length - 1] : { x: 0, y: 0 };
+      return { x: attachment.anchor.x + foot.x, y: attachment.anchor.y + foot.y };
+    }).sort(function (a, b) { return a.x - b.x; });
+    const count = supports.length;
+    const minX = count ? supports[0].x : nextRig.bodyOval.center.x;
+    const maxX = count ? supports[count - 1].x : nextRig.bodyOval.center.x;
+    const span = Math.max(0, maxX - minX);
+    const midpoint = (minX + maxX) * 0.5;
+    const comX = nextRig.bodyOval.center.x + (nextRig.comLocal ? nextRig.comLocal.x : 0);
+    const coverage = clamp(span / Math.max(1, nextRig.width), 0, 1.4);
+    const comOffset = comX - midpoint;
+    const centred = count >= 2 && comX >= minX - 8 && comX <= maxX + 8;
+    const quality = clamp((count >= 2 ? 0.45 : count * 0.18) + coverage * 0.34 + (centred ? 0.23 : 0), 0, 1);
+    return { count, supports, minX, maxX, span, midpoint, comX, comOffset, coverage, centred, quality };
+  }
+
+  function assessRigReadiness(nextRig) {
+    const profile = nextRig.physicsProfile || inferPhysicsProfile(nextRig);
+    const support = measureSupportLayout(nextRig);
+    const courseFit = currentLevel().challenges.map(function (challenge) {
+      let state = "ready";
+      let text = "Ready";
+      let advice = challengeAdvice(challenge);
+      if (challenge.type === "ceiling" && nextRig.height > challenge.clearance - 6) {
+        state = "attention";
+        text = "Too tall";
+        advice = `Lower or shrink the rig: it is ${Math.round(nextRig.height)}px high and this tunnel allows ${challenge.clearance}px.`;
+      } else if (challenge.type === "gap" && (nextRig.enginePotential < 72 || support.count < 2)) {
+        state = "attention";
+        text = "Needs momentum";
+        advice = "Use at least two supports and a compact rolling or walking rig for a steadier jump.";
+      } else if (challenge.type === "step" && (support.count < 2 || support.quality < 0.38)) {
+        state = "attention";
+        text = "Narrow support";
+        advice = "Add or spread supports so the chassis stays level at the step.";
+      } else if (challenge.type === "rough" && (support.count < 2 || support.span < Math.max(22, nextRig.width * 0.22))) {
+        state = "attention";
+        text = "Needs stability";
+        advice = "Place a second wheel or leg farther from the first for rough ground.";
+      }
+      return { challenge, label: challengeName(challenge), state, text, advice };
+    });
+    const warnings = [];
+    if (support.count < 2) warnings.push("Add a second wheel or leg so the chassis has a stable ground base.");
+    else if (support.span < Math.max(22, nextRig.width * 0.22)) warnings.push("Spread the ground supports farther apart to reduce tipping.");
+    if (!support.centred && support.count >= 2) warnings.push("Move a support toward the centre of mass (red cross) to balance the chassis.");
+    const courseWarning = courseFit.find(function (fit) { return fit.state === "attention"; });
+    if (courseWarning) warnings.push(courseWarning.advice);
+    const grade = warnings.length === 0 ? "Ready" : support.count < 2 ? "Needs support" : "Refine design";
+    const mode = profile.locomotionMode === "cart" || profile.locomotionMode === "trike" ? "Rolling rig"
+      : profile.locomotionMode === "walker" || profile.locomotionMode === "crawler" ? "Walking rig"
+      : profile.locomotionMode === "climber" ? "Climbing rig"
+      : profile.locomotionMode === "glider" ? "Gliding rig"
+      : "Hybrid rig";
+    return {
+      grade,
+      advice: warnings[0] || "Balanced support and course clearance look good. Run a test and refine from the result.",
+      support,
+      courseFit,
+      mode,
+      drive: nextRig.enginePotential >= 115 ? "strong" : nextRig.enginePotential >= 70 ? "workable" : "weak",
+      balance: support.centred && support.quality >= 0.58 ? "stable" : support.count >= 2 ? "workable" : "unstable",
+    };
+  }
+
+  function analysisItem(label, value, tone) {
+    const item = document.createElement("div");
+    item.className = `src-analysis-item${tone ? ` is-${tone}` : ""}`;
+    const name = document.createElement("span");
+    const result = document.createElement("strong");
+    name.textContent = label;
+    result.textContent = value;
+    item.appendChild(name);
+    item.appendChild(result);
+    return item;
+  }
+
+  function getElementRecords() {
+    const bodyIndex = rig ? rig.bodyStrokeIndex : 0;
+    const records = [{ kind: "chassis", index: bodyIndex, label: "Chassis", detail: "Main body · carries every attached component", type: "chassis", active: true }];
+    placedParts.forEach(function (part, index) {
+      records.push({
+        kind: "part",
+        index,
+        label: `${partDisplayName(part.type)} ${index + 1}`,
+        detail: `Placed part · ${partPurpose(part.type)}`,
+        type: part.type,
+        active: true,
+      });
+    });
+    for (let sourceIndex = 0; sourceIndex < strokes.length; sourceIndex += 1) {
+      if (sourceIndex === bodyIndex) continue;
+      const attachment = rig && (rig.detectedAttachments || rig.attachments || []).find(function (item) { return item.sourceStrokeIndex === sourceIndex; });
+      const type = attachment ? attachment.type : "connector";
+      const confidence = attachment && attachment.classification ? attachment.classification.confidence : 0;
+      const connected = !attachment || !attachment.classification || attachment.classification.connected !== false;
+      records.push({
+        kind: "stroke",
+        index: sourceIndex,
+        label: attachment ? `${partDisplayName(type)} sketch` : `Connector sketch ${sourceIndex}`,
+        detail: attachment
+          ? `${Math.round(confidence * 100)}% confidence · ${attachment.classification.reason}${connected ? "" : " · not connected to chassis"}`
+          : "Analyze to identify this freehand stroke.",
+        type,
+        active: connected,
+      });
+    }
+    return records;
+  }
+
+  function selectionMatches(record) {
+    return !!selectedElement && selectedElement.kind === record.kind && selectedElement.index === record.index;
+  }
+
+  function selectElement(kind, index) {
+    selectedElement = { kind, index };
+    selectedPartType = null;
+    syncPartSelection();
+    syncElementInspector();
+    renderDrawing();
+  }
+
+  function selectedElementRecord() {
+    return getElementRecords().find(selectionMatches) || null;
+  }
+
+  function syncElementInspector() {
+    if (inSelfTest) return;
+    if (!elementsListEl) return;
+    const records = getElementRecords();
+    const selected = selectedElementRecord();
+    if (selectedElement && !selected) selectedElement = null;
+    const readiness = rig && rig.readiness ? rig.readiness : null;
+    if (readinessEl) readinessEl.textContent = readiness ? readiness.advice : "Add two wheels or legs to give the chassis a stable support base, then analyze the design.";
+    if (readinessBadgeEl) {
+      readinessBadgeEl.textContent = readiness ? readiness.grade : "Draft";
+      readinessBadgeEl.dataset.state = readiness ? (readiness.grade === "Ready" ? "ready" : "attention") : "draft";
+    }
+    if (analysisSummaryEl) {
+      analysisSummaryEl.textContent = "";
+      if (readiness) {
+        analysisSummaryEl.appendChild(analysisItem("Type", readiness.mode, "info"));
+        analysisSummaryEl.appendChild(analysisItem("Drive", readiness.drive, readiness.drive === "strong" ? "ready" : readiness.drive === "weak" ? "attention" : "info"));
+        analysisSummaryEl.appendChild(analysisItem("Balance", readiness.balance, readiness.balance === "stable" ? "ready" : readiness.balance === "unstable" ? "attention" : "info"));
+        analysisSummaryEl.appendChild(analysisItem("Support base", `${Math.round(readiness.support.span)}px`, readiness.support.quality >= 0.5 ? "ready" : "attention"));
+        readiness.courseFit.forEach(function (fit) {
+          analysisSummaryEl.appendChild(analysisItem(fit.label, fit.text, fit.state === "ready" ? "ready" : "attention"));
+        });
+      } else {
+        analysisSummaryEl.appendChild(analysisItem("Detected", `${placedParts.length} placed ${placedParts.length === 1 ? "part" : "parts"}`, "info"));
+        analysisSummaryEl.appendChild(analysisItem("Next", "Analyze rig", "info"));
+      }
+    }
+    if (selectionInspectorEl) {
+      selectionInspectorEl.textContent = "";
+      const heading = document.createElement("strong");
+      const copy = document.createElement("span");
+      if (selected) {
+        heading.textContent = selected.label;
+        copy.textContent = selected.detail;
+      } else {
+        heading.textContent = "Select an element";
+        copy.textContent = "Use this list to inspect or edit parts and freehand connector strokes.";
+      }
+      selectionInspectorEl.appendChild(heading);
+      selectionInspectorEl.appendChild(copy);
+    }
+    if (deleteSelectedEl) deleteSelectedEl.disabled = !selected || selected.kind === "chassis";
+    if (duplicateSelectedEl) duplicateSelectedEl.disabled = !selected || selected.kind !== "part";
+    elementsListEl.textContent = "";
+    records.forEach(function (record) {
+      const item = document.createElement("li");
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = `src-element-button src-element-button--${record.type}${selectionMatches(record) ? " is-selected" : ""}${record.active ? "" : " is-inactive"}`;
+      button.setAttribute("aria-pressed", String(selectionMatches(record)));
+      const title = document.createElement("strong");
+      const detail = document.createElement("span");
+      title.textContent = record.label;
+      detail.textContent = record.detail;
+      button.appendChild(title);
+      button.appendChild(detail);
+      button.addEventListener("click", function () { selectElement(record.kind, record.index); });
+      item.appendChild(button);
+      elementsListEl.appendChild(item);
+    });
+  }
+
+  function removeSelectedElement() {
+    const selected = selectedElementRecord();
+    if (!selected || selected.kind === "chassis") return;
+    if (selected.kind === "part") placedParts.splice(selected.index, 1);
+    else if (selected.kind === "stroke") strokes.splice(selected.index, 1);
+    selectedElement = null;
+    selectedPartType = null;
+    rig = null;
+    baseLocked = false;
+    running = false;
+    paused = false;
+    hideRunResult();
+    syncPartSelection();
+    syncElementInspector();
+    renderDrawing();
+    setStatus("Selected element removed. Analyze again when the design is ready.", true);
+  }
+
+  function duplicateSelectedPart() {
+    const selected = selectedElementRecord();
+    if (!selected || selected.kind !== "part" || !placedParts[selected.index]) return;
+    const original = placedParts[selected.index];
+    placedParts.push({
+      type: original.type,
+      x: clamp(original.x + 26, 12, drawWidth - 12),
+      y: clamp(original.y + 14, 12, drawHeight - 12),
+      scale: placedPartScale(original),
+    });
+    selectedElement = { kind: "part", index: placedParts.length - 1 };
+    rig = null;
+    baseLocked = false;
+    hideRunResult();
+    syncElementInspector();
+    renderDrawing();
+    setStatus(`${partDisplayName(original.type)} duplicated. Drag the highlighted copy to position it.`, true);
   }
 
   function worldPoint(local) {
@@ -1382,14 +1887,73 @@ function setupSketchRigChallenge(container) {
     if (shouldUsePlanckBackend(rig) && initPlanckRig()) {
       syncFromPlanck();
     }
-    timer = currentLevel().timeLimit; cameraX = 0; phase = 0; stuckTimer = 0; bestProgress = sim.x;
+    timer = currentLevel().timeLimit; cameraX = 0; phase = 0; frameAccumulator = 0; stuckTimer = 0; bestProgress = sim.x;
     for (const ch of currentLevel().challenges) ch.done = false;
     return true;
   }
 
-  function failRun(msg) { running = false; paused = false; setStatus(`Run failed: ${msg}`, true); }
-  function winRun() { running = false; paused = false; setStatus(`Level cleared: ${currentLevel().name}`, true); }
-  function startRun() { if (!resetSim()) return; running = true; paused = false; setStatus("Simulation running: muscle-flex + alternating foot contacts + gravity load transfer."); syncHud(); }
+  function syncRunControls() {
+    if (!runButtonEl) return;
+    const label = running ? (paused ? "Resume test" : "Pause test") : "Run test";
+    runButtonEl.textContent = label;
+    runButtonEl.setAttribute("aria-pressed", String(running && paused));
+    runButtonEl.setAttribute("aria-label", label);
+  }
+
+  function hideRunResult() {
+    if (runResultEl) runResultEl.hidden = true;
+  }
+
+  function showRunResult(kind, title, copy) {
+    if (inSelfTest || !runResultEl) return;
+    runResultEl.hidden = false;
+    runResultEl.dataset.outcome = kind;
+    if (resultKickerEl) resultKickerEl.textContent = kind === "success" ? "Track cleared" : "Test result";
+    if (resultTitleEl) resultTitleEl.textContent = title;
+    if (resultCopyEl) resultCopyEl.textContent = copy;
+  }
+
+  function failureAdvice(message) {
+    const readiness = rig && rig.readiness;
+    if (message.indexOf("Time") >= 0) return readiness && readiness.drive === "weak"
+      ? "Build more drive: add a wheel or leg, then keep the rig compact."
+      : "Try a more compact support layout to keep momentum over the course.";
+    if (message.indexOf("fell") >= 0) return readiness && readiness.support.count < 2
+      ? "Add a second wheel or leg below the chassis before trying again."
+      : "Widen the support base or move a support toward the red centre-of-mass cross.";
+    if (message.indexOf("Stuck") >= 0) return readiness ? readiness.advice : "Add two wheels or legs with contact below the chassis.";
+    return readiness ? readiness.advice : "Analyze the design, then make one focused change.";
+  }
+
+  function failRun(msg) {
+    running = false;
+    paused = false;
+    const advice = failureAdvice(msg);
+    setStatus(`Run failed: ${msg} ${advice}`, true);
+    showRunResult("failure", msg, advice);
+    syncRunControls();
+    syncElementInspector();
+  }
+  function winRun() {
+    running = false;
+    paused = false;
+    if (!inSelfTest) completedLevels.add(levelIndex);
+    const nextText = levelIndex < levels.length - 1 ? "Try the next track when you are ready." : "You cleared every current track—try refining the rig for a faster run.";
+    setStatus(`Level cleared: ${currentLevel().name}. ${nextText}`, true);
+    showRunResult("success", `${currentLevel().name} cleared`, nextText);
+    syncTrackGoal();
+    syncRunControls();
+    syncElementInspector();
+  }
+  function startRun() {
+    if (!resetSim()) return;
+    running = true;
+    paused = false;
+    hideRunResult();
+    syncRunControls();
+    setStatus(`Simulation running. ${rig && rig.readiness ? rig.readiness.mode : "Watch the support base and refine after the test."}`);
+    syncHud();
+  }
 
   function updateSimulation(dt) {
     if (!running || paused || !rig) return;
@@ -1525,7 +2089,6 @@ function setupSketchRigChallenge(container) {
           contacts += 1;
           const contactY = Math.min(wp.y, groundY);
           allGroundContacts.push({ x: wp.x, y: contactY, source: a.type, ai });
-          if (a.type === "loop") wheelContacts.push({ x: wp.x, y: contactY, ai, radius: Math.max(8, a.wheelRadius || 12) });
           supportGroundY += groundY * (a.type === "loop" ? 1.3 : a.type === "leg" ? 1.2 : 0.9);
           supportGroundWeight += a.type === "loop" ? 1.3 : a.type === "leg" ? 1.2 : 0.9;
           avgX += wp.x;
@@ -1562,6 +2125,9 @@ function setupSketchRigChallenge(container) {
           }
         } else if (a.type === "loop") {
           const radius = Math.max(8, a.wheelRadius || 12);
+          // One attachment is one wheel. Raw rim samples still feed collision,
+          // but locomotion must not mistake a single wheel for an axle.
+          wheelContacts.push({ x: avgX, y: avgY, ai, radius });
           wheelSupports.push({ x: avgX, y: avgY, ai, radius });
           if (state.lastGroundX != null) {
             const rollDx = avgX - state.lastGroundX;
@@ -1630,6 +2196,15 @@ function setupSketchRigChallenge(container) {
         state.grabFor = 0;
         state.grabLength = 0;
         state.lastGroundX = null;
+        // Stabilizers work while airborne; grounding a fin or tail should not be
+        // required before it can counter pitch or soften a landing.
+        if (a.type === "fin") {
+          const airSpeed = Math.max(0, Math.abs(sim.vx) - 18);
+          sim.vy -= airSpeed * 0.012 * profile.airControl * dt;
+          sim.omega += (-sim.angle * 0.34 - sim.omega * 0.045) * profile.airControl * dt;
+        } else if (a.type === "tail") {
+          sim.omega += (-sim.angle * 0.24 - sim.omega * 0.07) * profile.airControl * dt;
+        }
       }
     }
 
@@ -1637,7 +2212,7 @@ function setupSketchRigChallenge(container) {
       for (const wheel of wheelCandidates) {
         const groundY = getGroundY(wheel.x);
         const wheelPen = wheel.y + wheel.radius - groundY;
-        if (wheelPen > -28) {
+        if (wheelPen > -28 && !wheelSupports.some(function (support) { return support.ai === wheel.ai; })) {
           wheelSupports.push({ x: wheel.x, y: groundY, ai: wheel.ai, radius: wheel.radius });
           allGroundContacts.push({ x: wheel.x, y: groundY, source: "loop", ai: wheel.ai });
           supportGroundY += groundY * 1.18;
@@ -2320,11 +2895,14 @@ function setupSketchRigChallenge(container) {
     hintEl.textContent = currentLevel().hint;
     timerEl.textContent = running ? `${timer.toFixed(1)}s` : `${currentLevel().timeLimit}s`;
     partsEl.textContent = rig ? rig.partText : "none";
-    massEl.textContent = rig ? String(Math.round(rig.mass)) : "0";
+    massEl.textContent = rig ? String(Math.round(rig.physicalMass || rig.mass)) : "0";
     gripEl.textContent = rig ? String(Math.round(rig.grip)) : "0";
     stabilityEl.textContent = rig ? String(Math.round(rig.stability)) : "0";
     engineEl.textContent = rig ? String(Math.round(rig.enginePotential)) : "0";
     heightEl.textContent = rig ? `${Math.round(rig.height)}px` : "0px";
+    root.classList.toggle("is-running", running && !paused);
+    root.classList.toggle("is-paused", running && paused);
+    syncRunControls();
   }
 
   function runVirtualTrial(desc, coeff, course) {
@@ -2612,6 +3190,7 @@ function setupSketchRigChallenge(container) {
       timer,
       cameraX,
       phase,
+      frameAccumulator,
       messageFlash,
       stuckTimer,
       bestProgress,
@@ -2631,6 +3210,7 @@ function setupSketchRigChallenge(container) {
     timer = saved.timer;
     cameraX = saved.cameraX;
     phase = saved.phase;
+    frameAccumulator = saved.frameAccumulator || 0;
     messageFlash = saved.messageFlash;
     stuckTimer = saved.stuckTimer;
     bestProgress = saved.bestProgress;
@@ -2810,11 +3390,16 @@ function setupSketchRigChallenge(container) {
     baseLocked = false;
     running = false;
     paused = false;
+    selectedPartType = null;
+    selectedElement = null;
+    hideRunResult();
     analyzeDrawing();
     renderDrawing();
     syncDrawCursor();
     drawWorld();
     syncHud();
+    syncPartSelection();
+    syncElementInspector();
     setStatus(`Loaded fixture: ${name}.`, true);
     if (autoRun) startRun();
   }
@@ -2987,6 +3572,93 @@ function setupSketchRigChallenge(container) {
       audits,
     };
     window.__sketchRigFixtureExpectations = payload;
+    return payload;
+  }
+
+  const freehandRecognitionExpectations = {
+    "wheel-cart": { loop: 2, mode: "cart" },
+    "uneven-cart": { loop: 2, structure: 1, mode: "cart" },
+    walker: { leg: 2, mode: "walker" },
+    trike: { loop: 3, mode: "trike" },
+    crawler: { leg: 3, mode: "crawler" },
+    glider: { fin: 2, tail: 1, mode: "glider" },
+    climber: { arm: 2, leg: 2, mode: "climber" },
+  };
+
+  function runFreehandRecognitionSuite() {
+    const saved = snapshotGameState();
+    const audits = [];
+    const edgeCases = [];
+    try {
+      inSelfTest = true;
+      for (const fixture of fixtureCatalog) {
+        const expected = freehandRecognitionExpectations[fixture.id];
+        levelIndex = 0;
+        strokes = cloneStrokes(buildFixtureDrawing(fixture.id));
+        placedParts = [];
+        rig = null;
+        baseLocked = false;
+        analyzeDrawing();
+        const detected = rig ? (rig.detectedAttachments || rig.attachments || []) : [];
+        const counts = detected.reduce(function (acc, attachment) {
+          acc[attachment.type] = (acc[attachment.type] || 0) + 1;
+          return acc;
+        }, {});
+        const failures = [];
+        Object.keys(expected).forEach(function (key) {
+          if (key === "mode") return;
+          if ((counts[key] || 0) < expected[key]) failures.push(`${key} ${counts[key] || 0} < ${expected[key]}`);
+        });
+        const mode = rig && rig.physicsProfile ? rig.physicsProfile.locomotionMode : "none";
+        if (mode !== expected.mode) failures.push(`mode ${mode} !== ${expected.mode}`);
+        const smallWheelOkay = fixture.id !== "trike" || detected.filter(function (attachment) { return attachment.type === "loop"; }).every(function (attachment) { return attachment.wheelRadius >= 5; });
+        if (!smallWheelOkay) failures.push("small wheel collapsed during sampling");
+        audits.push({
+          fixture: fixture.id,
+          counts,
+          mode,
+          detected: detected.map(function (attachment) {
+            return {
+              type: attachment.type,
+              prototype: attachment.features && attachment.features.prototypeType,
+              confidence: attachment.classification && attachment.classification.confidence,
+              connected: attachment.classification && attachment.classification.connected,
+              width: attachment.features && Number(attachment.features.relativeWidth.toFixed(2)),
+              height: attachment.features && Number(attachment.features.relativeHeight.toFixed(2)),
+              up: attachment.features && Number(attachment.features.upwardReach.toFixed(2)),
+              down: attachment.features && Number(attachment.features.downwardReach.toFixed(2)),
+              bend: attachment.features && Number(attachment.features.bend.toFixed(2)),
+            };
+          }),
+          ok: failures.length === 0,
+          failures,
+        });
+      }
+      strokes = [makeOvalStroke(132, 158, 48, 25, 24), makeOvalStroke(320, 34, 16, 16, 16)];
+      placedParts = [];
+      rig = null;
+      baseLocked = false;
+      analyzeDrawing();
+      const disconnectedWheel = rig && (rig.detectedAttachments || []).find(function (attachment) { return attachment.type === "loop"; });
+      const disconnectedInactive = !!(disconnectedWheel && disconnectedWheel.classification && disconnectedWheel.classification.connected === false);
+      const doesNotDrive = !!rig && !(rig.attachments || []).some(function (attachment) { return attachment.type === "loop"; });
+      edgeCases.push({
+        name: "disconnected-wheel",
+        ok: disconnectedInactive && doesNotDrive,
+        failures: [
+          ...(disconnectedInactive ? [] : ["disconnected wheel was not marked inactive"]),
+          ...(doesNotDrive ? [] : ["disconnected wheel affected the physics rig"]),
+        ],
+      });
+    } finally {
+      restoreGameState(saved, false);
+      inSelfTest = false;
+      syncElementInspector();
+    }
+    const passed = audits.filter(function (audit) { return audit.ok; }).length + edgeCases.filter(function (edgeCase) { return edgeCase.ok; }).length;
+    const total = audits.length + edgeCases.length;
+    const payload = { at: new Date().toISOString(), passed, total, ok: passed === total, audits, edgeCases };
+    window.__sketchRigFreehandRecognition = payload;
     return payload;
   }
 
@@ -3400,6 +4072,7 @@ function setupSketchRigChallenge(container) {
     const tuned = tunePhysicsFromFixtures();
     const warmup = runWarmupFixtureSuite();
     const fixtureExpectationsResult = runFixtureExpectationSuite();
+    const freehandRecognition = runFreehandRecognitionSuite();
     return runFixtureRegressionSuiteAsync().then(function (regression) {
       const batches = [];
       let chain = Promise.resolve();
@@ -3417,6 +4090,7 @@ function setupSketchRigChallenge(container) {
         const ok = !!(
           warmup.allPassed
           && fixtureExpectationsResult.ok
+          && freehandRecognition.ok
           && regression.warmup.allPassed
           && fixtureHealth.warmupFailures.length === 0
         );
@@ -3426,6 +4100,7 @@ function setupSketchRigChallenge(container) {
           tuning: tuned,
           warmup,
           fixtureExpectations: fixtureExpectationsResult,
+          freehandRecognition,
           regression,
           randomBatches: batches,
           avgRandomClearRate,
@@ -3446,11 +4121,34 @@ function setupSketchRigChallenge(container) {
   function addPlacedPart(type, point) {
     placedParts.push({ type, x: point.x, y: point.y, scale: 1 });
     rig = null;
+    baseLocked = false;
     running = false;
+    paused = false;
+    hideRunResult();
+    selectedElement = { kind: "part", index: placedParts.length - 1 };
+    selectedPartType = null;
+    syncPartSelection();
+    syncElementInspector();
     renderDrawing();
-    setStatus(`${type} added. Drag it to reposition.`, true);
+    setStatus(`${partDisplayName(type)} added. It is selected; drag it or use the elements list to reposition it.`, true);
   }
-  function setLevel(next) { levelIndex = (next + levels.length) % levels.length; running = false; paused = false; timer = currentLevel().timeLimit; if (rig) resetSim(); syncHud(); syncTrackGoal(); setStatus(`Level changed to: ${currentLevel().name}`); }
+  function setLevel(next) {
+    const bounded = clamp(next, 0, levels.length - 1);
+    if (bounded === levelIndex && next !== levelIndex) return;
+    levelIndex = bounded;
+    running = false;
+    paused = false;
+    timer = currentLevel().timeLimit;
+    hideRunResult();
+    if (rig) {
+      rig.readiness = assessRigReadiness(rig);
+      resetSim();
+    }
+    syncHud();
+    syncTrackGoal();
+    syncElementInspector();
+    setStatus(`Level changed to: ${currentLevel().name}. ${currentLevel().hint}`);
+  }
   function clearDrawing() {
     strokes = [makeDefaultBodyStroke()];
     placedParts = [];
@@ -3459,7 +4157,12 @@ function setupSketchRigChallenge(container) {
     baseLocked = false;
     running = false;
     paused = false;
+    selectedPartType = null;
+    selectedElement = null;
+    hideRunResult();
+    syncPartSelection();
     syncHud();
+    syncElementInspector();
     renderDrawing();
     syncDrawCursor();
     setStatus("Body reset. Draw connectors or add parts.", true);
@@ -3473,6 +4176,8 @@ function setupSketchRigChallenge(container) {
     }
     const hitPart = hitTestPlacedPart(p);
     if (hitPart) {
+      selectedElement = { kind: "part", index: hitPart.index };
+      syncElementInspector();
       if (hitPart.mode === "resize") {
         resizingPartIndex = hitPart.index;
         resizePartStart = {
@@ -3508,6 +4213,7 @@ function setupSketchRigChallenge(container) {
       const dist = Math.max(1, Math.hypot(p.x - part.x, p.y - part.y));
       part.scale = clamp((resizePartStart.scale * dist) / Math.max(1, resizePartStart.distance), 0.65, 1.8);
       rig = null;
+      hideRunResult();
       renderDrawing();
       syncDrawCursor(p);
       return;
@@ -3516,6 +4222,7 @@ function setupSketchRigChallenge(container) {
       placedParts[draggingPartIndex].x = clamp(p.x - dragPartOffset.x, 12, drawWidth - 12);
       placedParts[draggingPartIndex].y = clamp(p.y - dragPartOffset.y, 12, drawHeight - 12);
       rig = null;
+      hideRunResult();
       renderDrawing();
       syncDrawCursor(p);
       return;
@@ -3544,9 +4251,15 @@ function setupSketchRigChallenge(container) {
       for (let i = 1; i < currentStroke.length; i += 1) len += Math.hypot(currentStroke[i].x - currentStroke[i - 1].x, currentStroke[i].y - currentStroke[i - 1].y);
       if (len < 8) {
         strokes.pop();
+      } else {
+        rig = null;
+        baseLocked = false;
+        hideRunResult();
+        selectedElement = { kind: "stroke", index: strokes.length - 1 };
       }
     }
     currentStroke = null;
+    syncElementInspector();
     renderDrawing();
     syncDrawCursor();
   }
@@ -3561,6 +4274,41 @@ function setupSketchRigChallenge(container) {
   drawCanvas.addEventListener("touchmove", moveStroke, { passive: false });
   drawCanvas.addEventListener("touchend", endStroke);
   drawCanvas.addEventListener("touchcancel", endStroke);
+  drawCanvas.addEventListener("keydown", function (event) {
+    const selected = selectedElementRecord();
+    if (event.key === "Escape") {
+      event.preventDefault();
+      selectedPartType = null;
+      selectedElement = null;
+      syncPartSelection();
+      syncElementInspector();
+      renderDrawing();
+      setStatus("Placement cancelled. Select an element or choose a new part.");
+      return;
+    }
+    if ((event.key === "Delete" || event.key === "Backspace") && selected && selected.kind !== "chassis") {
+      event.preventDefault();
+      removeSelectedElement();
+      return;
+    }
+    if (!selected || selected.kind !== "part" || !placedParts[selected.index]) return;
+    const part = placedParts[selected.index];
+    const step = event.shiftKey ? 12 : 4;
+    if (event.key === "ArrowLeft") part.x = clamp(part.x - step, 12, drawWidth - 12);
+    else if (event.key === "ArrowRight") part.x = clamp(part.x + step, 12, drawWidth - 12);
+    else if (event.key === "ArrowUp") part.y = clamp(part.y - step, 12, drawHeight - 12);
+    else if (event.key === "ArrowDown") part.y = clamp(part.y + step, 12, drawHeight - 12);
+    else if (event.key === "[") part.scale = clamp(placedPartScale(part) - 0.08, 0.65, 1.8);
+    else if (event.key === "]") part.scale = clamp(placedPartScale(part) + 0.08, 0.65, 1.8);
+    else return;
+    event.preventDefault();
+    rig = null;
+    baseLocked = false;
+    hideRunResult();
+    renderDrawing();
+    syncElementInspector();
+    setStatus(`${partDisplayName(part.type)} adjusted. Analyze again to update the rig model.`);
+  });
   partPaletteEl.querySelectorAll(".src-part-chip").forEach(function (chip) {
     chip.addEventListener("click", function () {
       selectPartType(chip.dataset.partType);
@@ -3597,7 +4345,7 @@ function setupSketchRigChallenge(container) {
     clearDrawing();
     selectedPartType = "wheel";
     syncPartSelection();
-    setStatus("Starter chassis ready. Wheel selected — tap twice below the body, then Analyze and Run.", true);
+    setStatus("Starter chassis ready. Place one wheel below the body, choose Wheel again for a second support, then Analyze and Run.", true);
   });
 
   root.querySelector("#src-prev").addEventListener("click", function () { setLevel(levelIndex - 1); });
@@ -3614,13 +4362,46 @@ function setupSketchRigChallenge(container) {
     rig = null;
     if (strokes.length <= 1) baseLocked = false;
     running = false;
+    paused = false;
+    selectedElement = null;
+    hideRunResult();
     syncHud();
+    syncElementInspector();
     renderDrawing();
     setStatus("Last edit removed.");
   });
   root.querySelector("#src-analyze").addEventListener("click", analyzeDrawing);
-  root.querySelector("#src-run").addEventListener("click", function () { if (running) { paused = !paused; setStatus(paused ? "Simulation paused." : "Simulation resumed."); return; } startRun(); });
-  root.querySelector("#src-retry").addEventListener("click", function () { if (!resetSim()) return; running = true; paused = false; setStatus("Retry started."); });
+  root.querySelector("#src-run").addEventListener("click", function () {
+    if (running) {
+      paused = !paused;
+      syncRunControls();
+      setStatus(paused ? "Simulation paused. Use Resume test to continue." : "Simulation resumed.");
+      return;
+    }
+    startRun();
+  });
+  root.querySelector("#src-retry").addEventListener("click", function () {
+    if (!resetSim()) return;
+    running = true;
+    paused = false;
+    hideRunResult();
+    syncRunControls();
+    setStatus("Retry started. Watch the highlighted support and course feedback.");
+  });
+  deleteSelectedEl.addEventListener("click", removeSelectedElement);
+  duplicateSelectedEl.addEventListener("click", duplicateSelectedPart);
+  root.querySelector("#src-result-retry").addEventListener("click", function () {
+    if (!resetSim()) return;
+    running = true;
+    paused = false;
+    hideRunResult();
+    syncRunControls();
+    setStatus("New test started.");
+  });
+  root.querySelector("#src-result-next").addEventListener("click", function () {
+    if (levelIndex < levels.length - 1) setLevel(levelIndex + 1);
+    else hideRunResult();
+  });
   root.querySelector("#src-debug-toggle").addEventListener("click", function () {
     debugOpen = !debugOpen;
     syncDebugPanel();
@@ -3648,10 +4429,20 @@ function setupSketchRigChallenge(container) {
   });
 
   function tick(ts) {
-    const dt = Math.min(0.033, (ts - lastTs) / 1000);
+    const dt = Math.min(0.1, Math.max(0, (ts - lastTs) / 1000));
     lastTs = ts;
     if (messageFlash > 0) messageFlash = Math.max(0, messageFlash - dt);
-    updateSimulation(dt);
+    // The browser can render at 30, 60, or 120Hz. Advance the solver in a
+    // fixed cadence so traction, gait timing, and collision response stay
+    // consistent instead of changing with the display refresh rate.
+    frameAccumulator = Math.min(0.1, frameAccumulator + dt);
+    let physicsSteps = 0;
+    const fixedStep = 1 / 60;
+    while (frameAccumulator >= fixedStep && physicsSteps < 5) {
+      updateSimulation(fixedStep);
+      frameAccumulator -= fixedStep;
+      physicsSteps += 1;
+    }
     renderDrawing();
     drawWorld();
     syncHud();
@@ -3669,6 +4460,8 @@ function setupSketchRigChallenge(container) {
   loadArt();
   drawWorld();
   syncHud();
+  syncElementInspector();
+  syncRunControls();
   setStatus("Choose Starter Cart for a first run, or select a part and tap the blueprint to build your own.", true);
   window.runSketchRigSelfTest = function (trials, seedText) {
     runRandomDrawingSelfTest(clamp(Math.round(trials || 24), 6, 120), seedText || "sketch-rig-manual-self-test");
@@ -3682,6 +4475,9 @@ function setupSketchRigChallenge(container) {
   };
   window.runSketchRigFixtureExpectationSuite = function () {
     return runFixtureExpectationSuite();
+  };
+  window.runSketchRigFreehandRecognitionSuite = function () {
+    return runFreehandRecognitionSuite();
   };
   window.runSketchRigQualitySuite = function (options) {
     return runSketchRigQualitySuite(options);
@@ -3699,6 +4495,7 @@ function setupSketchRigChallenge(container) {
     delete window.runSketchRigRegressionSuite;
     delete window.runSketchRigPhysicsTune;
     delete window.runSketchRigFixtureExpectationSuite;
+    delete window.runSketchRigFreehandRecognitionSuite;
     delete window.runSketchRigQualitySuite;
     delete window.setSketchRigPlanckBackend;
     drawCanvas.removeEventListener("mousedown", beginStroke);
