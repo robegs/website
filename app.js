@@ -47,6 +47,21 @@ function registerReveal(el) {
 
 document.querySelectorAll("section, .hero-card, .panel, .card, .pub").forEach(registerReveal);
 
+const navLinks = [...document.querySelectorAll('.nav a[href^="#"]')];
+const navigationObserver = new IntersectionObserver(
+  (entries) => {
+    const visibleEntry = entries.find((entry) => entry.isIntersecting);
+    if (!visibleEntry) return;
+
+    navLinks.forEach((link) => {
+      link.classList.toggle("active", link.getAttribute("href") === `#${visibleEntry.target.id}`);
+    });
+  },
+  { rootMargin: "-35% 0px -55%", threshold: 0 }
+);
+
+document.querySelectorAll("main section[id]").forEach((section) => navigationObserver.observe(section));
+
 const publications = [
   {
     title: "Are crowd-sourced CTI datasets ready for supporting anti-cybercrime intelligence?",
