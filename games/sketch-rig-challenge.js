@@ -118,8 +118,27 @@ function setupSketchRigChallenge(container) {
   };
 
   const root = document.createElement("div");
-  root.className = "lab-game src-game";
+  root.className = "lab-game src-game src-game--workshop";
   root.innerHTML = `
+    <section class="src-mission-card" aria-labelledby="src-mission-title">
+      <div class="src-mission-copy">
+        <p class="src-mission-kicker" id="src-mission-kicker">Start here · Level 1</p>
+        <h4 id="src-mission-title">Build a rig that reaches the finish flag.</h4>
+        <p>Use a proven starter rig first, or make your own by choosing a part and tapping the blueprint.</p>
+      </div>
+      <div class="src-starter-rigs" aria-label="Starter rigs">
+        <button type="button" class="src-starter-rig is-recommended" data-src-fixture="wheel-cart" data-src-run="true">
+          <span>01</span><strong>Starter Cart</strong><small>Fastest way to learn</small>
+        </button>
+        <button type="button" class="src-starter-rig" data-src-fixture="trike" data-src-run="false">
+          <span>02</span><strong>Stable Trike</strong><small>Extra ground support</small>
+        </button>
+        <button type="button" class="src-starter-rig" id="src-build-own">
+          <span>03</span><strong>Build Your Own</strong><small>Start from the body</small>
+        </button>
+      </div>
+      <ol class="src-steps" aria-label="Play steps"><li><b>1</b> Pick or build</li><li><b>2</b> Analyze</li><li><b>3</b> Run and refine</li></ol>
+    </section>
     <div class="hud">
       <div class="hud-item"><strong>Level</strong><div id="src-level">1 / ${levels.length}</div></div>
       <div class="hud-item"><strong>Timer</strong><div id="src-timer">--</div></div>
@@ -138,7 +157,7 @@ function setupSketchRigChallenge(container) {
       <button type="button" class="btn ghost" id="src-analyze">Analyze</button>
       <button type="button" class="btn primary" id="src-run">Run</button>
       <button type="button" class="btn ghost" id="src-retry">Retry</button>
-      <button type="button" class="btn ghost" id="src-debug-toggle">Debug Fixtures</button>
+      <button type="button" class="btn ghost" id="src-debug-toggle">Developer tools</button>
     </div>
     <div class="src-debug-panel" id="src-debug-panel" hidden>
       <label class="src-debug-label" for="src-fixture-select">Fixture</label>
@@ -152,8 +171,9 @@ function setupSketchRigChallenge(container) {
     </div>
     <div class="src-layout">
       <section class="src-panel">
-        <h4>Draw Zone</h4>
-        <p class="src-help">The body starts on the grid. Draw connector strokes, or place rigid structure bars plus wheels, legs, arms and fins.</p>
+        <p class="src-panel-kicker">1 · Build</p>
+        <h4>Rig Blueprint</h4>
+        <p class="src-help" id="src-help">The oval is your starter chassis. Pick a part, then tap the blueprint to place it. Desktop players can still drag parts.</p>
         <div class="src-part-palette" id="src-part-palette">
           <button type="button" class="btn ghost src-part-chip" data-part-type="structure" draggable="true">Structure</button>
           <button type="button" class="btn ghost src-part-chip" data-part-type="wheel" draggable="true">Wheel</button>
@@ -166,6 +186,7 @@ function setupSketchRigChallenge(container) {
         <p class="src-hint" id="src-level-hint"></p>
       </section>
       <section class="src-world-wrap">
+        <div class="src-track-heading"><div><p class="src-panel-kicker">2 · Test</p><h4>Test Track</h4></div><span id="src-track-goal">Reach the finish</span></div>
         <canvas id="src-world" width="${worldWidth}" height="${worldHeight}" class="src-world"></canvas>
       </section>
     </div>
@@ -182,6 +203,9 @@ function setupSketchRigChallenge(container) {
   const engineEl = root.querySelector("#src-engine");
   const heightEl = root.querySelector("#src-height");
   const hintEl = root.querySelector("#src-level-hint");
+  const helpEl = root.querySelector("#src-help");
+  const trackGoalEl = root.querySelector("#src-track-goal");
+  const missionKickerEl = root.querySelector("#src-mission-kicker");
   const statusEl = root.querySelector("#src-status");
   const debugPanelEl = root.querySelector("#src-debug-panel");
   const fixtureSelectEl = root.querySelector("#src-fixture-select");
@@ -231,6 +255,7 @@ function setupSketchRigChallenge(container) {
   let physicsTuning = null;
   let inSelfTest = false;
   let debugOpen = false;
+  let selectedPartType = null;
   let draggingPartIndex = -1;
   let resizingPartIndex = -1;
   let dragPartOffset = { x: 0, y: 0 };
@@ -249,6 +274,25 @@ function setupSketchRigChallenge(container) {
   function syncDebugPanel() {
     if (!debugPanelEl) return;
     debugPanelEl.hidden = !debugOpen;
+  }
+  function syncPartSelection() {
+    partPaletteEl.querySelectorAll(".src-part-chip").forEach(function (chip) {
+      chip.classList.toggle("is-selected", chip.dataset.partType === selectedPartType);
+    });
+    if (selectedPartType) {
+      helpEl.textContent = `${selectedPartType} selected — tap the blueprint to place one, then drag it to refine its position.`;
+    } else {
+      helpEl.textContent = "The oval is your starter chassis. Pick a part, then tap the blueprint to place it. Desktop players can still drag parts.";
+    }
+  }
+  function selectPartType(type) {
+    selectedPartType = selectedPartType === type ? null : type;
+    syncPartSelection();
+    if (selectedPartType) setStatus(`${selectedPartType} selected. Tap the blueprint to place it.`, true);
+  }
+  function syncTrackGoal() {
+    if (trackGoalEl) trackGoalEl.textContent = `${currentLevel().name} · ${currentLevel().timeLimit}s`;
+    if (missionKickerEl) missionKickerEl.textContent = `Build for · ${currentLevel().name}`;
   }
   function defaultPhysicsTuning() {
     return {
@@ -3406,7 +3450,7 @@ function setupSketchRigChallenge(container) {
     renderDrawing();
     setStatus(`${type} added. Drag it to reposition.`, true);
   }
-  function setLevel(next) { levelIndex = (next + levels.length) % levels.length; running = false; paused = false; timer = currentLevel().timeLimit; if (rig) resetSim(); syncHud(); setStatus(`Level changed to: ${currentLevel().name}`); }
+  function setLevel(next) { levelIndex = (next + levels.length) % levels.length; running = false; paused = false; timer = currentLevel().timeLimit; if (rig) resetSim(); syncHud(); syncTrackGoal(); setStatus(`Level changed to: ${currentLevel().name}`); }
   function clearDrawing() {
     strokes = [makeDefaultBodyStroke()];
     placedParts = [];
@@ -3423,6 +3467,10 @@ function setupSketchRigChallenge(container) {
   function beginStroke(e) {
     e.preventDefault();
     const p = pointFromEvent(e);
+    if (selectedPartType) {
+      addPlacedPart(selectedPartType, p);
+      return;
+    }
     const hitPart = hitTestPlacedPart(p);
     if (hitPart) {
       if (hitPart.mode === "resize") {
@@ -3512,7 +3560,11 @@ function setupSketchRigChallenge(container) {
   drawCanvas.addEventListener("touchstart", beginStroke, { passive: false });
   drawCanvas.addEventListener("touchmove", moveStroke, { passive: false });
   drawCanvas.addEventListener("touchend", endStroke);
+  drawCanvas.addEventListener("touchcancel", endStroke);
   partPaletteEl.querySelectorAll(".src-part-chip").forEach(function (chip) {
+    chip.addEventListener("click", function () {
+      selectPartType(chip.dataset.partType);
+    });
     chip.addEventListener("dragstart", function (event) {
       event.dataTransfer.setData("text/src-part-type", chip.dataset.partType);
       event.dataTransfer.effectAllowed = "copy";
@@ -3532,6 +3584,20 @@ function setupSketchRigChallenge(container) {
     if (!type) return;
     const point = pointFromEvent(event);
     addPlacedPart(type, point);
+  });
+
+  root.querySelectorAll("[data-src-fixture]").forEach(function (button) {
+    button.addEventListener("click", function () {
+      loadFixtureIntoCanvas(button.dataset.srcFixture, button.dataset.srcRun === "true");
+      selectedPartType = null;
+      syncPartSelection();
+    });
+  });
+  root.querySelector("#src-build-own").addEventListener("click", function () {
+    clearDrawing();
+    selectedPartType = "wheel";
+    syncPartSelection();
+    setStatus("Starter chassis ready. Wheel selected — tap twice below the body, then Analyze and Run.", true);
   });
 
   root.querySelector("#src-prev").addEventListener("click", function () { setLevel(levelIndex - 1); });
@@ -3596,12 +3662,14 @@ function setupSketchRigChallenge(container) {
   calibration = loadCachedCalibration() || { driveGain: 1.14, gripGain: 0.54, shapeGain: 0.56, spinGain: 0.82, dampingGain: 0.43, trialShapes: 0, coarseModels: 0, refinedModels: 0, score: 0 };
   physicsTuning = loadCachedPhysicsTuning() || defaultPhysicsTuning();
   syncDebugPanel();
+  syncPartSelection();
+  syncTrackGoal();
   renderDrawing();
   syncDrawCursor();
   loadArt();
   drawWorld();
   syncHud();
-  setStatus("Engine ready. Draw immediately or open Debug Fixtures to run tuning and simulations.", true);
+  setStatus("Choose Starter Cart for a first run, or select a part and tap the blueprint to build your own.", true);
   window.runSketchRigSelfTest = function (trials, seedText) {
     runRandomDrawingSelfTest(clamp(Math.round(trials || 24), 6, 120), seedText || "sketch-rig-manual-self-test");
   };
@@ -3639,6 +3707,7 @@ function setupSketchRigChallenge(container) {
     drawCanvas.removeEventListener("touchstart", beginStroke);
     drawCanvas.removeEventListener("touchmove", moveStroke);
     drawCanvas.removeEventListener("touchend", endStroke);
+    drawCanvas.removeEventListener("touchcancel", endStroke);
   };
 }
 
