@@ -1,13 +1,13 @@
 # Content Update Monitor Report
 
-- Run timestamp (UTC): 2026-09-01T11:19:44Z
+- Run timestamp (UTC): 2026-09-16T11:05:26Z
 - Sources checked: 3
 
 ## Detected Changes
 
-- **Google Scholar**
-  - URL: https://scholar.google.com/citations?user=ExKBvzMAAAAJ&hl=es
-  - Previous hash: `cb7109a60404b3f0e7d3e350c3b1e9ae36836433902c7bddc16c5cec6a996649`
-  - Current hash: `b8874f57c3eff7e9308603a6fbd86e8a49bf827cc7d9d60098ccb56cc1849b8c`
+- **NEC Profile**
+  - URL: https://neclab.eu/research-groups/system-platform-for-iot-and-ai/intelligent-software-system/our-researchers/people-detail/dr-roberto-gonzalez-sanchez
+  - Previous hash: `75dd79777d9178bbebd50e5a30155ad735ce6340edeb14d97d5bac5bb0796165`
+  - Current hash: `c1e2de6ae07c4c2c14c20ff2c060624efddd2c218d57b0715097d8f996cacf5b`
 
 Action: review source pages and update website content if needed.
