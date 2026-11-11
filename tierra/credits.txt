@@ -1,0 +1,5 @@
+Three.js r170 — MIT License; see vendor/THREE-LICENSE.txt.
+https://github.com/mrdoob/three.js/tree/r170
+Earth texture: earth_atmos_2048.jpg, distributed in Three.js examples (NASA Blue Marble imagery).
+https://github.com/mrdoob/three.js/blob/r170/examples/textures/planets/earth_atmos_2048.jpg
+All scripts and imagery are served locally. No analytics, accounts or personal data collection on this page.
