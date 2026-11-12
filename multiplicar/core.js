@@ -1,0 +1,6 @@
+export const shuffle = values => {const result=[...values];for(let i=result.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[result[i],result[j]]=[result[j],result[i]];}return result;};
+export function factsFor(table,level){const tables=table==='mix'?(level==='easy'?[1,2,5,10]:[1,2,3,4,5,6,7,8,9,10]):[Number(table)];return tables.flatMap(a=>Array.from({length:level==='easy'?5:10},(_,i)=>({a,b:i+1,value:a*(i+1)})));}
+export function uniqueFacts(facts,count){const seen=new Set();return shuffle(facts).filter(f=>{if(seen.has(f.value))return false;seen.add(f.value);return true}).slice(0,count);}
+export function choicesFor(fact){const {a,b,value}=fact;const values=new Set([value]);for(const n of shuffle([value+a,value-a,value+b,value-b,value+1,value-1,value+2,value-2])){if(n>=1&&n<=100)values.add(n);if(values.size===4)break;}for(let n=1;values.size<4;n++)values.add(n);return shuffle([...values]);}
+export function winningLine(marked,size){const lines=[];for(let i=0;i<size;i++){lines.push(Array.from({length:size},(_,j)=>i*size+j));lines.push(Array.from({length:size},(_,j)=>j*size+i));}lines.push(Array.from({length:size},(_,i)=>i*size+i));lines.push(Array.from({length:size},(_,i)=>i*size+size-1-i));return lines.find(line=>line.every(i=>marked.has(i)))||null;}
+export function sumText({a,b}){return Array(a).fill(b).join(' + ');}
