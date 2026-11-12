@@ -1,5 +1,6 @@
 import * as THREE from './vendor/three.module.js';
 import { initSolarView } from './solar.js?v=2';
+import { initOrbitView } from './orbit.js?v=3';
 const $ = s => document.querySelector(s);
 const lessons = [
 ['Ecuador','EL CINTURÓN DE LA TIERRA','Una línea por la mitad','El ecuador es un círculo imaginario que rodea la parte más ancha de la Tierra. La divide en dos mitades: el hemisferio norte y el hemisferio sur. Su latitud es 0°.','Prueba: gira la Tierra y sigue el cinturón amarillo. ¡Nunca termina!',['equator']],
@@ -49,6 +50,21 @@ const ro=new ResizeObserver(()=>{const w=host.clientWidth,h=host.clientHeight;if
 let last=0;function animate(t){requestAnimationFrame(animate);if(document.hidden||$('#mapSection').hidden){last=t;return}if(spinning)yaw+=Math.min(t-last,50)*.006;last=t;chosen.visible=$('#showCoordinates').checked;camera.position.copy(point(pitch,yaw,zoom));camera.lookAt(0,0,0);camera.updateMatrixWorld();labels.forEach(l=>{const p=point(l.lat,l.lon,1.04);const visible=(!l.layer||(l.layer==='selected'?chosen.visible:layerGroups[l.layer].visible))&&p.dot(camera.position.clone().sub(p))>0;l.el.hidden=!visible;if(visible){p.project(camera);l.el.style.left=`${(p.x+1)*host.clientWidth/2}px`;l.el.style.top=`${(1-p.y)*host.clientHeight/2}px`}});renderer.render(scene,camera)}requestAnimationFrame(animate);
 }
 
-let solarStarted=false;
-function switchView(solar){$('#mapSection').hidden=solar;$('#sunSection').hidden=!solar;$('#mapView').setAttribute('aria-pressed',String(!solar));$('#sunView').setAttribute('aria-pressed',String(solar));if(solar&&!solarStarted){try{initSolarView();solarStarted=true}catch(e){$('#solarLoading').textContent='El modelo 3D no se ha podido cargar. Puedes leer las explicaciones de abajo.';console.error(e)}}}
-$('#mapView').onclick=()=>switchView(false);$('#sunView').onclick=()=>switchView(true);
+const startedViews = new Set(['map']);
+function switchView(view) {
+  for (const name of ['map', 'sun', 'orbit']) {
+    $('#'+name+'Section').hidden = name !== view;
+    $('#'+name+'View').setAttribute('aria-pressed', String(name === view));
+  }
+  if (!startedViews.has(view)) {
+    try {
+      if (view === 'sun') initSolarView();
+      if (view === 'orbit') initOrbitView();
+      startedViews.add(view);
+    } catch (e) {
+      $(view === 'sun' ? '#solarLoading' : '#orbitLoading').textContent = 'No se ha podido cargar el modelo 3D. Puedes leer las explicaciones de abajo.';
+      console.error(e);
+    }
+  }
+}
+for (const name of ['map', 'sun', 'orbit']) $('#'+name+'View').onclick = () => switchView(name);
