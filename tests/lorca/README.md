@@ -30,8 +30,6 @@ Illustrations and creative game text were made for this site. The portrait is
 explicitly labeled as an illustration. Downloaded poems are never uploaded.
 
 
-## Cuaderno Reporteros de la poesía
+## Información para investigar
 
-Se verificaron los ocho apartados y el reto final, apertura táctil de pistas, fotografía local, persistencia tras recarga, descarga TXT, impresión a PDF con respuestas, borrado y ausencia de desbordamiento a 390, 810 y 1080 px. También pasó la regresión de historia, mapas, artes, taller y cuestionario. Pruebas en Chromium con emulación táctil de iPad; no se verificó Safari real.
-
-Fotografía: `lorca/lorca-1914.jpg`, autor desconocido, 1914; dominio público según https://commons.wikimedia.org/wiki/File:Lorca_(1914).jpg. Fuentes de las pistas enlazadas en cada apartado (Cervantes, UNED, Ministerio de Educación de Chile y Patronato de la Alhambra).
+La ficha escolar no se reproduce como formulario. Su contenido está integrado en Historia (biografía, lugares, fotografía y curiosidades) y Sus palabras (dos poemas, teatro y Andalucía en Música). Las fuentes explican cómo seguir investigando. Se retiraron el cuaderno, sus campos y su módulo de guardado. Fotografía de 1914: autor desconocido, dominio público según https://commons.wikimedia.org/wiki/File:Lorca_(1914).jpg.
