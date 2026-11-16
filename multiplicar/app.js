@@ -1,15 +1,17 @@
+import {startAdventure} from './adventure.js';
 import {shuffle,factsFor,uniqueFacts,choicesFor,winningLine,sumText} from './core.js';
 const $=s=>document.querySelector(s);
 const icon=(name,cls='')=>`<svg class="${cls}" aria-hidden="true"><use href="art.svg#${name}"/></svg>`;
-const games={garden:['01 · CONSTRUYE Y CUENTA','Cosechamos multiplicaciones'],memory:['02 · ENCUENTRA LAS PAREJAS','Un poquito de memoria y magia'],bingo:['03 · HAZ FLORECER TU CARTÓN','¡Vamos a cantar bingo!'],balloons:['04 · ELIGE TU GLOBO','Una respuesta entre las nubes']};
-let game='garden',table='2',level='easy',state={},timer=null,session=0;
+const games={adventure:['MODO AVENTURA · EXPLORA Y RESCATA','Las islas de Lila'],garden:['01 · CONSTRUYE Y CUENTA','Cosechamos multiplicaciones'],memory:['02 · ENCUENTRA LAS PAREJAS','Un poquito de memoria y magia'],bingo:['03 · HAZ FLORECER TU CARTÓN','¡Vamos a cantar bingo!'],balloons:['04 · ELIGE TU GLOBO','Una respuesta entre las nubes']};
+let stopAdventure=null;
+let game='adventure',table='2',level='easy',state={},timer=null,session=0;
 let stars=0,storageWorks=true;
 try{const n=Number(localStorage.getItem('jardin-tablas-stars-v1'));if(Number.isSafeInteger(n)&&n>=0)stars=Math.min(n,1000000);}catch{storageWorks=false;}
 function updateStars(){ $('#starCount').textContent=String(stars);$('#collectionOpen').setAttribute('aria-label',`Mi colección: ${stars} estrellas`);if(!storageWorks)$('#storageNote').textContent='Las estrellas duran durante esta visita: este navegador no permite guardarlas. Puedes jugar igualmente.';}
 function award(){stars++;try{localStorage.setItem('jardin-tablas-stars-v1',String(stars));}catch{storageWorks=false;}updateStars();return [5,15,30,50].includes(stars)?' ¡Has desbloqueado una pegatina! Mira tu colección.':'';}
 updateStars();
 function feedback(text,type=''){ $('#feedback').textContent=text;$('#feedback').className='feedback '+type;}
-function reset(){clearTimeout(timer);session++;state={completed:0,solved:false,filled:new Set(),errors:[],lastFact:null};$('#nextButton').hidden=true;$('#hintPanel').hidden=true;$('#hintButton').hidden=false;$('#hintButton').textContent='Una pista, Lila';$('#hintButton').setAttribute('aria-expanded','false');$('#gameEyebrow').textContent=games[game][0];$('#playTitle').textContent=games[game][1];feedback('');$('#levelNote').textContent=level==='easy'?'Primeros pasos: multiplicamos por números del 1 al 5. Parejas: 4 parejas. Bingo: 2 en línea.':'Exploradora: multiplicamos por números del 1 al 10. Parejas: 6 parejas. Bingo: 3 en línea.';if(game==='memory')startMemory();else if(game==='bingo')startBingo();else startQuestion();}
+function reset(){if(game!=='adventure')setFocus(false);$('#focusGame').hidden=game!=='adventure';stopAdventure?.();stopAdventure=null;document.querySelector('.play-layout').classList.toggle('adventure-layout',game==='adventure');clearTimeout(timer);session++;state={completed:0,solved:false,filled:new Set(),errors:[],lastFact:null};$('#nextButton').hidden=true;$('#hintPanel').hidden=true;$('#hintButton').hidden=false;$('#hintButton').textContent='Una pista, Lila';$('#hintButton').setAttribute('aria-expanded','false');$('#gameEyebrow').textContent=games[game][0];$('#playTitle').textContent=games[game][1];feedback('');$('#levelNote').textContent=level==='easy'?'Primeros pasos: multiplicamos por números del 1 al 5. Parejas: 4 parejas. Bingo: 2 en línea.':'Exploradora: multiplicamos por números del 1 al 10. Parejas: 6 parejas. Bingo: 3 en línea.';if(game==='adventure'){$('#hintButton').hidden=true;$('#gameInstructions').textContent='Recoge cristales, construye puentes y rescata a tus tres compañeros. Toca para jugar. Sin vidas que perder ni cuenta atrás.';stopAdventure=startAdventure({root:$('#gameArea'),facts:pool(),table,level,award,feedback,progress:$('#roundProgress')});}else if(game==='memory')startMemory();else if(game==='bingo')startBingo();else startQuestion();}
 const pool=()=>factsFor(table,level);
 function selectFact(){let candidates=pool().filter(f=>!state.lastFact||f.a!==state.lastFact.a||f.b!==state.lastFact.b);const review=state.errors.shift();const retry=review&&candidates.find(f=>f.a===review.a&&f.b===review.b);if(review&&!retry)state.errors.push(review);const fact=retry||shuffle(candidates)[0]||pool()[0];state.lastFact=fact;return fact;}
 function setFact(f){state.fact=f;$('#gameArea').dataset.a=String(f.a);$('#gameArea').dataset.b=String(f.b);}
@@ -47,4 +49,7 @@ function openCollection(){const unlocked=awards.filter(x=>stars>=x[2]).length;$(
 $('#collectionOpen').onclick=$('#collectionBottom').onclick=openCollection;$('#collectionClose').onclick=$('#collectionContinue').onclick=()=>$('#collectionDialog').close();
 // Generic copy fits both the 2×2 beginner board and the 3×3 explorer board.
 $('[data-game="bingo"] > span > span').textContent='Completa una línea de flores';
+function setFocus(active){document.body.classList.toggle('quest-focus',active);$('#focusGame').textContent=active?'Volver a las tablas ↙':'Ampliar juego ⛶';$('#focusGame').setAttribute('aria-pressed',String(active));}
+$('#focusGame').onclick=()=>{setFocus(!document.body.classList.contains('quest-focus'));$('.game-board').scrollIntoView({behavior:'instant',block:'start'});};
+document.addEventListener('keydown',event=>{if(event.key==='Escape'&&document.body.classList.contains('quest-focus')){setFocus(false);$('#focusGame').focus();}});
 updateSettings();reset();
