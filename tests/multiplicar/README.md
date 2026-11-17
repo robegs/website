@@ -71,3 +71,25 @@ while keeping the essential moving obstacles. Physical-device Safari untested.
 Additional browser verification covered direct touch lane selection, cross-lane
 magnet pickup, opt-in sound, blocked localStorage, automatic blur/dialog pauses,
 and no stale rewards after switching games.
+
+## Ruta de las tablas
+
+```sh
+node tests/multiplicar/trail.test.mjs
+# With the static server and Playwright/Chromium available:
+node tests/multiplicar/trail.browser.cjs
+```
+
+Choose “Ruta de las tablas” inside the runner. Each zone starts at one group of
+the selected table and advances through numbered gates to ×5 (easy) or ×10
+(explorer). Three distinct choices include exactly one next multiple. Wrong gates
+keep the current multiple and retry the same step with addition/multiplication
+feedback, without awarding a star. Jump/magnet cannot bypass gates. The result
+hint is optional and becomes visible after a mistake. Mode selection remains
+active when the table/difficulty changes during the visit; records are separate
+from free-run records. Mixed tables choose a fresh table at each zone.
+
+Model tests cover all ten tables/both levels, 14/15/20 choices for the table of
+7, wrong retries, rewards, pause and three complete zones. Browser tests cover
+touch gate choices, hints, progress, table switching, cleanup, and phone/iPad
+portrait/landscape controls. Free-run regression also verified.
