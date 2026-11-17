@@ -41,3 +41,33 @@ Adventure progress is stored separately for each table and difficulty. No person
 data is collected. Sound is off initially, and reduced-motion preferences disable
 the travel transitions. iPad validation uses Chromium touch emulation, not Safari
 on a physical iPad.
+
+## Lila: reparto salvaje (arcade)
+
+```sh
+node tests/multiplicar/runner.test.mjs
+# With the static server and Playwright/Chromium available:
+node tests/multiplicar/runner.browser.cjs
+```
+
+The pure model checks collisions, jumping, cross-lane magnet collection, pause,
+three zones, table arithmetic and terminal state. Browser tests use a virtual
+clock and seeded randomness to complete a real three-zone race, verify visible
+cargo/rewards, checkpoints, replay, saved record, keyboard and iPad touch controls,
+and phone/tablet/desktop layouts. No production test hooks are exposed.
+
+Each collected basket contains the selected table's number of fruits. The cargo
+shows the repeated sum and equal-group multiplication as the player collects it;
+there are no answer prompts or maths gates. Beginner zones offer five baskets,
+explorer zones ten. Three baskets feed the local friend; all three zones remain
+playable even when that target is missed. Rocks slow the runner without removing
+collected fruit. Three baskets charge a five-second magnet/shield.
+
+The record and existing stars persist locally; a race itself is not saved. The
+race pauses on tab hiding, window blur, an offscreen track, or collection opening.
+Sound is opt-in, and reduced motion suppresses scenery scrolling and particles
+while keeping the essential moving obstacles. Physical-device Safari untested.
+
+Additional browser verification covered direct touch lane selection, cross-lane
+magnet pickup, opt-in sound, blocked localStorage, automatic blur/dialog pauses,
+and no stale rewards after switching games.
