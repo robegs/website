@@ -4,7 +4,7 @@ import {shuffle,factsFor,uniqueFacts,choicesFor,winningLine,sumText} from './cor
 const $=s=>document.querySelector(s);
 const icon=(name,cls='')=>`<svg class="${cls}" aria-hidden="true"><use href="art.svg#${name}"/></svg>`;
 const games={runner:['ARCADE · CORRE, SALTA Y REPARTE','Lila: reparto salvaje'],adventure:['MODO AVENTURA · EXPLORA Y RESCATA','Las islas de Lila'],garden:['01 · CONSTRUYE Y CUENTA','Cosechamos multiplicaciones'],memory:['02 · ENCUENTRA LAS PAREJAS','Un poquito de memoria y magia'],bingo:['03 · HAZ FLORECER TU CARTÓN','¡Vamos a cantar bingo!'],balloons:['04 · ELIGE TU GLOBO','Una respuesta entre las nubes']};
-let stopAdventure=null,runnerMode='free';
+let stopAdventure=null,runnerMode='trail';
 let game='runner',table='2',level='easy',state={},timer=null,session=0;
 let stars=0,storageWorks=true;
 try{const n=Number(localStorage.getItem('jardin-tablas-stars-v1'));if(Number.isSafeInteger(n)&&n>=0)stars=Math.min(n,1000000);}catch{storageWorks=false;}

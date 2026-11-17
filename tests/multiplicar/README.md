@@ -93,3 +93,18 @@ Model tests cover all ten tables/both levels, 14/15/20 choices for the table of
 7, wrong retries, rewards, pause and three complete zones. Browser tests cover
 touch gate choices, hints, progress, table switching, cleanup, and phone/iPad
 portrait/landscape controls. Free-run regression also verified.
+
+## Growing multiplication box
+
+The runner now defaults to Ruta de las tablas. Free-run browser checks explicitly
+select Reparto libre. Trail checks assert that a fresh page defaults to trail mode,
+that wrong answers do not grow the array, and that 7 × 3 and 7 × 4 render exactly
+7 columns with 3/4 rows and 21/28 fruit cells. The main equation, row/column labels,
+and cumulative row totals share colours. New rows animate once; reduced motion
+disables that animation. The last three equations, a streak message and the
+rescued-friend display reinforce progress without changing scoring. Controls
+stay directly beneath the track even as the neighbouring box grows.
+
+Run `node tests/multiplicar/array.browser.cjs` with the preview server and
+Playwright to check every row of 10 × 1 through 10 × 10, column alignment,
+streak feedback, control placement and reduced-motion rendering.
